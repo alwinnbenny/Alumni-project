@@ -66,7 +66,7 @@ const Home = () => {
                 <div className="container h-100">
                     <div className="row h-100 align-items-center justify-content-center">
                         <div className="col-lg-8  text-center">
-                            <h1 className="text-white font-weight-bold display-3 mb-4">Welcome to BZU CS ALUMNI</h1>
+                            <h1 className="text-white font-weight-bold display-3 mb-4">Welcome to CEP ALUMNI</h1>
                             <p className="text-white-75 font-weight-light lead mb-5">Connecting Computer Science Alumni Across The Globe</p>
                             {!isAdmin && <Link className="btn btn-primary btn-xl" to="about">Find Out More</Link>}
                             {!isLoggedIn && <Link className="btn btn-info  ms-2   btn-xl" to="login">Login</Link>}
@@ -82,7 +82,7 @@ const Home = () => {
                 <div className="container">
                     <div className="text-center">
                         <h2 className="section-heading text-uppercase">Alumni Benefits</h2>
-                        <h3 className=" card-title text-muted">As a member of the global BZU alumni network, you have access to a variety of exclusive services and benefits.</h3>
+                        <h3 className=" card-title text-muted">As a member of the global CEP alumni network, you have access to a variety of exclusive services and benefits.</h3>
                     </div>
                     <div className="row">
                         <div className="col-lg-3 col-sm-6 mb-4">
