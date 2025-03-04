@@ -142,9 +142,9 @@ header.masthead>.container {
     transform: translateX(0);
 }
 
-.main.sidebar-open {
-    /* margin-left: 240px; */
-}
+/* .main.sidebar-open {
+    margin-left: 240px;
+} */
 
 /* @media (max-width: 768px) {
     .sidebar {
