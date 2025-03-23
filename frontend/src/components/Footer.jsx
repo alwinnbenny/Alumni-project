@@ -24,11 +24,11 @@ const Footer = () => {
           <div className="row">
             <div className="col-lg-4 ml-auto text-center mb-5 mb-lg-0">
               <FaPhone className={iconClasses} />
-              <div className="text-${theme === 'dark' ? 'white' : 'black'}">(+91)9904******</div>
+              <div className="text-${theme === 'dark' ? 'white' : 'black'}">+91 9188405172</div>
             </div>
             <div className="col-lg-4 mr-auto text-center">
               <FaEnvelope className={iconClasses} />
-              <a className="d-block" href="mailto:cs@bzu.edu.pk">cep@1234</a>
+              <a className="d-block" href="mailto:cs@bzu.edu.pk">cepoonjar.ihrd@gmail.com</a>
             </div>
           </div>
         </div>

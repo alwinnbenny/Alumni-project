@@ -113,7 +113,7 @@ CREATE TABLE `events` (
   `title` varchar(250) NOT NULL,
   `content` text NOT NULL,
   `schedule` datetime NOT NULL,
-  `banner` text NOT NULL,
+  
   `date_created` datetime NOT NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
