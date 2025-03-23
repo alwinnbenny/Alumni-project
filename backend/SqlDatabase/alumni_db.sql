@@ -26,7 +26,7 @@ SET time_zone = "+00:00";
 --
 -- Table structure for table `alumnus_bio`
 --
-
+/*
 CREATE TABLE `alumnus_bio` (
   `id` int(30) NOT NULL,
   `name` varchar(255) NOT NULL,
@@ -38,6 +38,17 @@ CREATE TABLE `alumnus_bio` (
   `avatar` text NOT NULL,
   `status` tinyint(1) NOT NULL DEFAULT 0 COMMENT '0= Unverified, 1= Verified',
   `date_created` date NOT NULL DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+*/
+
+
+CREATE TABLE `alumnus_bio` (
+    `id` int(30) NOT NULL AUTO_INCREMENT,
+    `name` varchar(255) NOT NULL,
+    `email` varchar(250) NOT NULL,
+    `course_id` int(30) NOT NULL,
+    `date_created` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --

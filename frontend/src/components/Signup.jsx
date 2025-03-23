@@ -84,7 +84,7 @@ const Signup = () => {
                                                 <option value="" disabled>Please select</option>
                                                 <option value="alumnus">Alumnus</option>
                                                 <option value="admin">Admin</option>
-                                                <option value="admin">Student</option>
+                                                
                                             </select>
                                         </div>
                                         {values.userType === "alumnus" &&
