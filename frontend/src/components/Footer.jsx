@@ -33,19 +33,22 @@ const Footer = () => {
           </div>
         </div>
         <br />
+
         <div className="container">
           {/* <div className={`small text-center text-${theme === 'dark' ? 'gray-400' : 'muted'}`}>
             Copyright © 2024 - Junaid Rana | <a href="https://junaidrana.vercel.app" target="_blank">Portfolio</a>
           </div> */}
-          <div className={`small text-center text-${theme === 'dark' ? 'gray-400' : 'muted'}`}>
+          
+          {/* <div className={`small text-center text-${theme === 'dark' ? 'gray-400' : 'muted'}`}>
              |  {devfooter} <a
               href="https://junaidrana.vercel.app/"
               target="_blank"
               rel="noreferrer"
             >
+            
               <GoVerified style={{ fontSize: "12px", marginLeft: "2px", color:"#03b3ff" }} />
             </a>
-          </div>
+          </div> */}
         </div>
       </footer>
     </>
