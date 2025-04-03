@@ -49,7 +49,8 @@ const Careers = () => {
         const filteredCareer = jobs.filter(career =>
             career.job_title.toLowerCase().includes(searchQuery.toLowerCase()) ||
             career.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            career.location.toLowerCase().includes(searchQuery.toLowerCase())
+            career.location.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            career.company.toLowerCase().includes(searchQuery.toLowerCase())
         );
         setFilteredJob(filteredCareer);
     }, [searchQuery, jobs]);

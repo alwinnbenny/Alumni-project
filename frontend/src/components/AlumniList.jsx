@@ -43,7 +43,7 @@ const AlumniList = () => {
                 <div className="container-fluid h-100">
                     <div className="row h-100 align-items-center justify-content-center text-center">
                         <div className="col-lg-8 align-self-end mb-4 page-title">
-                            <h3 className="text-white">Alumnus/Alumnae List</h3>
+                            <h3 className="text-white">Alumnae List</h3>
                             <hr className="divider my-4" />
                         </div>
                     </div>
