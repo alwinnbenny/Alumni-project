@@ -5,8 +5,10 @@ import multer from "multer";
 import path from "path";
 import bcrypt from "bcrypt";
 import sendEmail from "../utils/mailer.js";
+import { OAuth2Client } from "google-auth-library";
 
 const router = express.Router();
+const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
 // const storage = multer.diskStorage({
 //     destination: (req, file, cb) => {
@@ -133,6 +135,100 @@ router.post("/logout", (req, res) => {
     res.status(200).json({ message: 'Logout Success' });
 });
 
+// Google Sign-In Route
+router.post("/google-signin", async (req, res) => {
+    const { token } = req.body;
+  
+    try {
+      const ticket = await googleClient.verifyIdToken({
+        idToken: token,
+        audience: process.env.GOOGLE_CLIENT_ID,
+      });
+      const payload = ticket.getPayload();
+      const { email, name, sub: googleId } = payload;
+  
+      const checkUserSql = "SELECT * FROM users WHERE email = ?";
+      con.query(checkUserSql, [email], async (err, result) => {
+        if (err) {
+          console.error("Database query error:", err);
+          return res.status(500).json({ error: "Database query error", details: err.message });
+        }
+  
+        if (result.length > 0) {
+          const user = result[0];
+          const token = jwt.sign(
+            { role: user.type, email: user.email },
+            "jwt_csalumni_key",
+            { expiresIn: "1d" }
+          );
+          return res.json({
+            loginStatus: true,
+            userId: user.id,
+            userType: user.type,
+            userName: user.name,
+            alumnus_id: user.alumnus_id,
+            token,
+          });
+        } else {
+          const verificationToken = Math.random().toString(36).substr(2) + Date.now().toString(36);
+          const alumnusSql =
+            "INSERT INTO alumnus_bio (name, email, verification_token) VALUES (?, ?, ?)";
+          con.query(alumnusSql, [name, email, verificationToken], (alumnusErr, alumnusResult) => {
+            if (alumnusErr) {
+              console.error("Alumnus insert error:", alumnusErr);
+              return res.status(500).json({ error: "Alumnus insert error", details: alumnusErr.message });
+            }
+  
+            const alumnusId = alumnusResult.insertId;
+            const userSql =
+              "INSERT INTO users (name, email, type, alumnus_id) VALUES (?, ?, ?, ?)";
+            con.query(userSql, [name, email, "alumnus", alumnusId], async (userErr, userResult) => {
+              if (userErr) {
+                console.error("User insert error:", userErr);
+                return res.status(500).json({ error: "User insert error", details: userErr.message });
+              }
+  
+              const verificationLink = `${process.env.BASE_URL}/auth/verify?token=${verificationToken}`;
+              const html = `<p>Click <a href="${verificationLink}">here</a> to verify your email.</p>`;
+              try {
+                await sendEmail(email, "Verify Your Email - Alumni BZU", html);
+                return res.json({
+                  signupStatus: true,
+                  message: "Account created, please verify your email",
+                  userId: userResult.insertId,
+                });
+              } catch (emailErr) {
+                console.error("Email sending error:", emailErr);
+                return res.status(500).json({ error: "Email sending failed", details: emailErr.message });
+              }
+            });
+          });
+        }
+      });
+    } catch (error) {
+      console.error("Google token verification error:", error);
+      return res.status(400).json({ error: "Invalid Google token", details: error.message });
+    }
+  });
+  
+  // Existing verification route (from your previous setup)
+  router.get("/verify", (req, res) => {
+    const { token } = req.query;
+  
+    const verifyQuery = "SELECT * FROM alumnus_bio WHERE verification_token = ?";
+    con.query(verifyQuery, [token], (err, result) => {
+      if (err) return res.status(500).json({ error: "Query Error" });
+      if (result.length === 0) return res.status(400).send("Invalid or expired token");
+  
+      const updateQuery =
+        "UPDATE alumnus_bio SET status = 1, verification_token = NULL WHERE verification_token = ?";
+      con.query(updateQuery, [token], (updateErr) => {
+        if (updateErr) return res.status(500).json({ error: "Update Error" });
+        res.send("Email verified successfully! You can now log in.");
+      });
+    });
+  });
+
 router.get("/counts", (req, res) => {
     const sql = `
         SELECT
@@ -162,6 +258,56 @@ router.get("/counts", (req, res) => {
         res.json(counts);
     });
 });
+
+router.get("/achievements", (req, res) => {
+    const sql = `
+      SELECT a.id, a.title, a.description, a.date_achieved, a.created_at, ab.name, ab.email
+      FROM achievements a
+      JOIN alumnus_bio ab ON a.alumnus_id = ab.id
+      ORDER BY a.created_at DESC
+    `;
+    con.query(sql, (err, result) => {
+      if (err) {
+        console.error("Error fetching achievements:", err);
+        return res.status(500).json({ error: "Database error", details: err.message });
+      }
+      res.json(result);
+    });
+  });
+  
+  // Add a new achievement (admin only)
+  router.post("/achievements", (req, res) => {
+    const { alumnus_id, title, description, date_achieved } = req.body;
+    if (!alumnus_id || !title) {
+      return res.status(400).json({ error: "alumnus_id and title are required" });
+    }
+  
+    const sql = "INSERT INTO achievements (alumnus_id, title, description, date_achieved) VALUES (?, ?, ?, ?)";
+    con.query(sql, [alumnus_id, title, description, date_achieved || null], (err, result) => {
+      if (err) {
+        console.error("Error adding achievement:", err);
+        return res.status(500).json({ error: "Database error", details: err.message });
+      }
+      res.json({ success: true, message: "Achievement added", id: result.insertId });
+    });
+  });
+  
+  // Optional: Delete an achievement (admin only)
+  router.delete("/achievements/:id", (req, res) => {
+    const { id } = req.params;
+    const sql = "DELETE FROM achievements WHERE id = ?";
+    con.query(sql, [id], (err, result) => {
+      if (err) {
+        console.error("Error deleting achievement:", err);
+        return res.status(500).json({ error: "Database error", details: err.message });
+      }
+      if (result.affectedRows === 0) {
+        return res.status(404).json({ error: "Achievement not found" });
+      }
+      res.json({ success: true, message: "Achievement deleted" });
+    });
+  });
+
 
 router.get('/jobs', (req, res) => {
     // const sql = `
@@ -612,17 +758,17 @@ router.post('/gallery', galleryUpload.single('image'), (req, res) => {
     }
 });
 
-router.get("/alumni", (req, res) => {
+router.get("/alumni", (_req, res) => {
     const sql = "SELECT a.*,c.course,a.name as name from alumnus_bio a inner join courses c on c.id = a.course_id order by a.name asc";
     con.query(sql, (err, result) => {
-        if (err) return res.json({ Error: "Query Error" })
-        if (result.length > 0) {
-            return res.json(result);
-        } else {
-            return res.json({ message: "No Data Available" })
-        }
-    });
-});
+        if (err) {
+            console.error("Error fetching alumni:", err);
+            return res.status(500).json({ error: "Database error", details: err.message });
+          }
+          console.log("Alumni query result:", result); // Debug log
+          res.json(result.length > 0 ? result : []); // Ensure array response
+        });
+      });
 
 router.delete("/alumni/:id", (req, res) => {
     const eid = req.params.id;

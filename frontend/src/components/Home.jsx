@@ -39,7 +39,7 @@ const Home = () => {
     useEffect(() => {
         axios.get(`${baseUrl}auth/up_events`)
             .then((res) => {
-                console.log(res.data);
+                console.log("Upcoming events:", JSON.stringify(res.data, null, 2));
                 setEvents(res.data);
             })
             .catch((err) => console.log(err));

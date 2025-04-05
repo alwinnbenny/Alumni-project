@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+/*import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 
 const AchievementsList = () => {
@@ -45,4 +45,4 @@ const AchievementsList = () => {
   );
 };
 
-export default AchievementsList;
+export default AchievementsList;*/

@@ -8,7 +8,7 @@ const About = () => {
 
 
   useEffect(() => {
-    // axios.get('http://localhost:3000/auth/settings')
+    //axios.get('http://localhost:3000/auth/settings')
     axios.get(`${baseUrl}auth/settings`)
       .then((res) => {
         setSystem(res.data);

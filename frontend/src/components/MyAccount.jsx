@@ -131,6 +131,11 @@ const MyAccount = () => {
                                     <div className="col-sm-10">
                                         <select onChange={handleChange} className="form-control select2" name="course_id" required value={acc.course_id}>
                                             <option disabled value="">Select course</option>
+                                            <option value="male">CS</option>
+                                            <option value="female">EC</option>
+                                            <option value="female">EEE</option>
+                                            <option value="female">MCA</option>
+                                            <option value="female">BCA</option>
                                             {courses.map(c => (
                                                 <option key={c.id} value={c.id}>{c.course}</option>
                                             ))}
