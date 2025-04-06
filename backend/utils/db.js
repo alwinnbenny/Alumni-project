@@ -1,7 +1,8 @@
-import mysql from "mysql2";
+//import mysql from "mysql2";
 import dotenv from "dotenv";
 
 dotenv.config();
+import mysql from "mysql2";
 
 console.log("DB_HOST:", process.env.DB_HOST);
 console.log("DB_USER:", process.env.DB_USER);
@@ -26,5 +27,8 @@ con.connect((err) => {
     }
 })
 
-
+con.on("error", (err) => {
+    console.error("MySQL connection error:", err);
+  });
+  
 export default con;

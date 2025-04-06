@@ -6,6 +6,13 @@ import path from "path";
 import bcrypt from "bcrypt";
 import sendEmail from "../utils/mailer.js";
 import { OAuth2Client } from "google-auth-library";
+ import mysql from 'mysql2';
+ import dotenv from 'dotenv';
+dotenv.config(); // ✅ This must come before using any process.env variables
+
+
+//const db = await mysql.createConnection({ /* config */ });
+
 
 const router = express.Router();
 const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
@@ -840,71 +847,264 @@ router.get("/alumni_list", (req, res) => {
     });
 });
 
+//const multer = require('multer');
 
-router.put('/upaccount', avatarUpload.single('image'), async (req, res) => {
-    try {
-        // const avatar = req.file.path ;
 
-        const { name, connected_to, course_id, email, gender, batch, password, alumnus_id, user_id } = req.body;
-        let hashedPassword = null;
-        if (password) {
-            hashedPassword = await bcrypt.hash(password, 10);
-        }
-        // Update alumnus_bio table
-        const asql = 'UPDATE alumnus_bio SET name = ?, connected_to = ?, course_id = ?, email = ?, gender = ?, batch = ? WHERE id = ?';
-        const avalues = [name, connected_to, course_id, email, gender, batch, alumnus_id];
-        con.query(asql, avalues, (err, result) => {
-            if (err) {
-                console.error('Error updating alumnus_bio:', err);
-                res.status(500).json({ error: 'An error occurred' });
-                return;
-            }
-
-            // avatr
-            if (req.file) {
-                const avsql = 'UPDATE alumnus_bio SET avatar = ? WHERE id = ?';
-                const avvalues = [req.file.path, alumnus_id];
-                con.query(avsql, avvalues, (err, result) => {
-                    if (err) {
-                        console.error('Error updating pic:', err);
-                        // res.status(500).json({ error: 'pic error occurred' });
-                        return;
-                    }
-                    // res.json({ message: 'pic updated successfully' });
-                });
-            }
-
-            // Update users table
-            const usql = 'UPDATE users SET name = ?, email = ? WHERE id = ?';
-            const uvalues = [name, email, user_id];
-            con.query(usql, uvalues, (err, result) => {
-                if (err) {
-                    console.error('Error updating users:', err);
-                    res.status(500).json({ error: 'An error occurred' });
-                    return;
-                }
-                // Update password in users table
-                if (hashedPassword) {
-                    const psql = 'UPDATE users SET password = ? WHERE id = ?';
-                    const pvalues = [hashedPassword, user_id];
-                    con.query(psql, pvalues, (err, result) => {
-                        if (err) {
-                            console.error('Error updating password:', err);
-                            res.status(500).json({ error: 'An error occurred' });
-                            return;
-                        }
-                        res.json({ message: 'Account updated successfully' });
-                    });
-                } else {
-                    res.json({ message: 'Account updated successfully' });
-                }
-            });
-        });
-    } catch (error) {
-        console.error('Error updating account:', error);
-        res.status(500).json({ error: 'An error occurred' });
-    }
+// Ensure the avatar storage folder exists (public/avatar)
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, 'public/avatar');
+  },
+  filename: function (req, file, cb) {
+    // Rename file to avoid collision: userID_timestamp.ext
+    const ext = path.extname(file.originalname);
+    const uniqueName = `avatar_${Date.now()}${ext}`;
+    cb(null, uniqueName);
+  }
 });
+
+const upload = multer({ storage });
+
+router.put("/upaccount", upload.single('image'), async (req, res) => {
+  const {
+    name,
+    connected_to,
+    course_id,
+    email,
+    gender,
+    password,
+    batch,
+    alumnus_id,
+    user_id
+  } = req.body;
+
+  if (!alumnus_id || !user_id || !name || !course_id || !email || !gender || !batch) {
+    return res.status(400).json({ error: "Missing required fields" });
+  }
+
+  const avatar = req.file ? req.file.filename : null; // Use saved filename
+
+  const insertSql = `
+    INSERT INTO alumni_accounts 
+    (user_id, name, connected_to, course_id, email, gender, batch, avatar)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+  `;
+  const insertValues = [user_id, name, connected_to, course_id, email, gender, batch, avatar];
+
+  con.query(insertSql, insertValues, (err) => {
+    if (err) {
+      console.error("Error inserting into alumni_accounts:", err);
+      return res.status(500).json({ error: "Failed to update alumni account" });
+    }
+
+    // Update users table
+    const updateUserSql = 'UPDATE users SET name = ?, email = ? WHERE id = ?';
+    con.query(updateUserSql, [name, email, user_id], async (err) => {
+      if (err) {
+        console.error("Error updating users table:", err);
+        return res.status(500).json({ error: "Failed to update user table" });
+      }
+
+      if (password && password.trim() !== "") {
+        try {
+          const hashedPassword = await bcrypt.hash(password, 10);
+          const updatePassSql = 'UPDATE users SET password = ? WHERE id = ?';
+          con.query(updatePassSql, [hashedPassword, user_id], (err) => {
+            if (err) {
+              console.error("Error updating password:", err);
+              return res.status(500).json({ error: "Failed to update password" });
+            }
+            return res.json({ message: "Account updated successfully with avatar" });
+          });
+        } catch (err) {
+          console.error("Password hashing failed:", err);
+          return res.status(500).json({ error: "Password hashing failed" });
+        }
+      } else {
+        return res.json({ message: "Account updated successfully with avatar" });
+      }
+    });
+  });
+});
+
+
+
+
+// //Optional: set up storage config for avatar file (if needed)
+// const storage = multer.memoryStorage(); // or configure diskStorage
+// const upload = multer({ storage });
+
+// router.put("/upaccount", upload.single('image'), async (req, res) => {
+//     try {
+//       const {
+//         name,
+//         connected_to,
+//         course_id,
+//         email,
+//         gender,
+//         password,
+//         batch,
+//         alumnus_id,
+//         user_id
+//       } = req.body;
+  
+//       if (!alumnus_id || !user_id || !name || !course_id || !email || !gender || !batch) {
+//         return res.status(400).json({ error: "Missing required fields" });
+//       }
+  
+//       const avatar = req.file ? req.file.originalname : null;
+  
+//       // Proceed with DB update like before, using `alumnus_id` as `id`
+//       //const sql = `
+//     //     UPDATE alumni_accounts 
+//     //     SET user_id = ?, name = ?, connected_to = ?, course_id = ?, email = ?, gender = ?, batch = ?, avatar = ?
+//     //     WHERE id = ?
+//     //   `;
+//     //   const values = [user_id, name, connected_to, course_id, email, gender, batch, avatar, alumnus_id];
+//     const sql = `
+//     INSERT INTO alumni_accounts 
+//     (user_id, name, connected_to, course_id, email, gender, batch, avatar)
+//     VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+//   `;
+//   const values = [user_id, name, connected_to, course_id, email, gender, batch, avatar];
+  
+//       con.query(sql, values, (err, result) => {
+//         if (err) {
+//           console.error("Error updating account:", err);
+//           return res.status(500).json({ error: "Internal server error" });
+//         }
+  
+//         // Update users table
+//         const userSql = 'UPDATE users SET name = ?, email = ? WHERE id = ?';
+//         const userValues = [name, email, user_id];
+  
+//         con.query(userSql, userValues, (err) => {
+//           if (err) {
+//             console.error('Error updating users:', err);
+//             return res.status(500).json({ error: 'Failed to update user table' });
+//           }
+  
+//           if (password) {
+//             //import bcrypt from 'bcrypt';
+
+//         //    //  const bcrypt = require('bcrypt');
+//             const saltRounds = 10;
+//             bcrypt.hash(password, saltRounds, (err, hashedPassword) => {
+//               if (err) {
+//                 console.error('Error hashing password:', err);
+//                 return res.status(500).json({ error: 'Password hashing failed' });
+//               }
+  
+//               const passSql = 'UPDATE users SET password = ? WHERE id = ?';
+//               con.query(passSql, [hashedPassword, user_id], (err) => {
+//                 if (err) {
+//                   console.error('Error updating password:', err);
+//                   return res.status(500).json({ error: 'Failed to update password' });
+//                 }
+//         if (password && password.trim() !== '') {
+//             // New password provided — hash and update
+//             const hashedPassword =  bcrypt.hash(password, 10);
+//             const psql = 'UPDATE users SET password = ? WHERE id = ?';
+//              db.query(psql, [hashedPassword, user_id]);
+//           } else {
+//             // No password provided — reuse existing password from DB
+//             const [existingUser] =  db.query('SELECT password FROM users WHERE id = ?', [user_id]);
+//             const existingPassword = existingUser?.[0]?.password;
+          
+//             if (existingPassword) {
+//               const psql = 'UPDATE users SET password = ? WHERE id = ?';
+//                db.query(psql, [existingPassword, user_id]);
+//             } else {
+//               console.error('No existing password found for user');
+//               return res.status(500).json({ error: 'Unable to retain existing password' });
+//             }
+//           }
+          
+//                 res.json({ message: 'Account updated successfully' });
+//               });
+//             });
+//     //       } 
+//     } catch (error) {
+//       console.error('Error updating account:', error);
+//       res.status(500).json({ error: 'An error occurred' });
+//     }
+//   });
+  
+//new code 
+
+
+
+
+
+
+
+
+// router.put("/upaccount", (req, res) => {
+//     const {
+//       id,
+//       user_id,
+//       name,
+//       connected_to,
+//       course_id,
+//       email,
+//       gender,
+//       batch,
+//       avatar // optional
+//     } = req.body;
+  
+//     if (!id || !user_id || !name || !course_id || !email || !gender || !batch) {
+//       return res.status(400).json({ error: "Missing required fields" });
+//     }
+  
+//     const sql = `
+//       UPDATE alumni_accounts 
+//       SET user_id = ?, name = ?, connected_to = ?, course_id = ?, email = ?, gender = ?, batch = ?, avatar = ? 
+//       WHERE id = ?
+//     `;
+  
+//     const values = [user_id, name, connected_to, course_id, email, gender, batch, avatar, id];
+  
+//     db.query(sql, values, (err, result) => {
+//       if (err) {
+//         console.error("Error updating account:", err);
+//         return res.status(500).json({ error: "Internal server error" });
+//       }
+//       res.json({ message: "Account updated successfully" });
+//     });
+//   });
+
+  
+//             // Update users table
+//             const usql = 'UPDATE users SET name = ?, email = ? WHERE id = ?';
+//             const uvalues = [name, email, user_id];
+//             con.query(usql, uvalues, (err, result) => {
+//                 if (err) {
+//                     console.error('Error updating users:', err);
+//                     res.status(500).json({ error: 'An error occurred' });
+//                     return;
+//                 }
+//                 // Update password in users table
+//                 if (hashedPassword) {
+//                     const psql = 'UPDATE users SET password = ? WHERE id = ?';
+//                     const pvalues = [hashedPassword, user_id];
+//                     con.query(psql, pvalues, (err, result) => {
+//                         if (err) {
+//                             console.error('Error updating password:', err);
+//                             res.status(500).json({ error: 'An error occurred' });
+//                             return;
+//                         }
+//                         res.json({ message: 'Account updated successfully' });
+//                     });
+//                 } else {
+//                     res.json({ message: 'Account updated successfully' });
+//                 }
+//             });
+        
+//      catch (error) {
+//         console.error('Error updating account:', error);
+//         res.status(500).json({ error: 'An error occurred' });
+//     }
+// });
 
 
 // router.put('/upaccount', avatarUpload.single('image'), (req, res) => {
