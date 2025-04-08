@@ -11,6 +11,9 @@ import Careers from "./components/Careers";
 import Forum from "./components/Forum";
 import About from "./components/About";
 import Login from "./components/Login";
+import ForgotPassword from './components/ForgotPassword';
+import ResetPassword from './components/ResetPassword'; // adjust path as needed
+
 import Signup from "./components/Signup";
 import MyAccount from "./components/MyAccount";
 import Dashboard from "./admin/Dashboard";
@@ -70,6 +73,10 @@ function AppRouter() {
         <Route path="/about" element={<About />} />
         <Route path="/achievements" element={<Achievements />} /> {/* New public route */}
         <Route path="/login" element={<Login />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+<Route path="/reset-password/:token" element={<ResetPassword />} />
+
+
         <Route path="/signup" element={<Signup />} />
         {isLoggedIn && isAdmin && (
           <Route path="/dashboard" element={<Dashboard />}>
@@ -98,5 +105,6 @@ function AppRouter() {
     </>
   );
 }
+
 
 export default App;

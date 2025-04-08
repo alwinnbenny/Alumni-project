@@ -7,6 +7,8 @@ import bcrypt from "bcrypt";
 import sendEmail from "../utils/mailer.js";
 import { OAuth2Client } from "google-auth-library";
  import mysql from 'mysql2';
+ 
+ import sendResetEmail from '../Utils/sendResetEmail.js';
  import dotenv from 'dotenv';
 dotenv.config(); // ✅ This must come before using any process.env variables
 
@@ -198,7 +200,7 @@ router.post("/google-signin", async (req, res) => {
               const verificationLink = `${process.env.BASE_URL}/auth/verify?token=${verificationToken}`;
               const html = `<p>Click <a href="${verificationLink}">here</a> to verify your email.</p>`;
               try {
-                await sendEmail(email, "Verify Your Email - Alumni BZU", html);
+                await sendEmail(email, "Verify Your Email - Alumni CEP", html);
                 return res.json({
                   signupStatus: true,
                   message: "Account created, please verify your email",
@@ -265,7 +267,56 @@ router.get("/counts", (req, res) => {
         res.json(counts);
     });
 });
+// Example middleware — adjust based on how you're managing auth (e.g., sessions, JWTs)
+function ensureAuthenticated(req, res, next) {
+    if (!req.user) {
+      return res.status(401).json({ error: "Unauthorized" });
+    }
+    next();
+  }
+  
+  // Optional: for role-based access (e.g., admin only)
+  function ensureAdmin(req, res, next) {
+    if (req.user?.role !== "admin") {
+      return res.status(403).json({ error: "Admin access required" });
+    }
+    next();
+  }
+  
 
+
+
+
+// Forgot Password
+router.post('/forgot-password', (req, res) => {
+  const { email } = req.body;
+  const sql = "SELECT * FROM users WHERE email = ?";
+  con.query(sql, [email], (err, result) => {
+    if (err) return res.status(500).json({ message: "Server error" });
+    if (result.length === 0) return res.status(404).json({ message: "Email not found" });
+
+    const user = result[0];
+    const token = jwt.sign({ id: user.id }, process.env.JWT_SECRET, { expiresIn: '15m' });
+
+    sendResetEmail(email, token); // Email sending logic
+    res.json({ message: "Reset link sent to your email." });
+  });
+});
+
+// Reset Password
+router.post('/reset-password/:token', (req, res) => {
+  const { token } = req.params;
+  const { password } = req.body;
+  jwt.verify(token, process.env.JWT_SECRET, (err, decoded) => {
+    if (err) return res.status(400).json({ message: "Invalid or expired token" });
+
+    const hash = bcrypt.hashSync(password, 10);
+    con.query("UPDATE users SET password = ? WHERE id = ?", [hash, decoded.id], (err2) => {
+      if (err2) return res.status(500).json({ message: "Error updating password" });
+      res.json({ message: "Password reset successful" });
+    });
+  });
+});
 router.get("/achievements", (req, res) => {
     const sql = `
       SELECT a.id, a.title, a.description, a.date_achieved, a.created_at, ab.name, ab.email
@@ -281,15 +332,27 @@ router.get("/achievements", (req, res) => {
       res.json(result);
     });
   });
+
+  // Allow both admin and alumnus to add achievements
+router.post("/achievements", ensureAuthenticated, (req, res) => {
+    const { title, description, date_achieved } = req.body;
   
-  // Add a new achievement (admin only)
-  router.post("/achievements", (req, res) => {
-    const { alumnus_id, title, description, date_achieved } = req.body;
+    // Determine who is submitting the achievement
+    let alumnus_id = req.body.alumnus_id;
+  
+    // If the user is an alumnus, use their ID
+    if (req.user.role === "alumnus") {
+      alumnus_id = req.user.id;
+    }
+  
     if (!alumnus_id || !title) {
       return res.status(400).json({ error: "alumnus_id and title are required" });
     }
   
-    const sql = "INSERT INTO achievements (alumnus_id, title, description, date_achieved) VALUES (?, ?, ?, ?)";
+    const sql = `
+      INSERT INTO achievements (alumnus_id, title, description, date_achieved)
+      VALUES (?, ?, ?, ?)
+    `;
     con.query(sql, [alumnus_id, title, description, date_achieved || null], (err, result) => {
       if (err) {
         console.error("Error adding achievement:", err);
@@ -298,9 +361,7 @@ router.get("/achievements", (req, res) => {
       res.json({ success: true, message: "Achievement added", id: result.insertId });
     });
   });
-  
-  // Optional: Delete an achievement (admin only)
-  router.delete("/achievements/:id", (req, res) => {
+  router.delete("/achievements/:id", ensureAuthenticated, ensureAdmin, (req, res) => {
     const { id } = req.params;
     const sql = "DELETE FROM achievements WHERE id = ?";
     con.query(sql, [id], (err, result) => {
@@ -314,6 +375,40 @@ router.get("/achievements", (req, res) => {
       res.json({ success: true, message: "Achievement deleted" });
     });
   });
+  
+  
+//   // Add a new achievement (admin only)
+//   router.post("/achievements", (req, res) => {
+//     const { alumnus_id, title, description, date_achieved } = req.body;
+//     if (!alumnus_id || !title) {
+//       return res.status(400).json({ error: "alumnus_id and title are required" });
+//     }
+  
+//     const sql = "INSERT INTO achievements (alumnus_id, title, description, date_achieved) VALUES (?, ?, ?, ?)";
+//     con.query(sql, [alumnus_id, title, description, date_achieved || null], (err, result) => {
+//       if (err) {
+//         console.error("Error adding achievement:", err);
+//         return res.status(500).json({ error: "Database error", details: err.message });
+//       }
+//       res.json({ success: true, message: "Achievement added", id: result.insertId });
+//     });
+//   });
+  
+//   // Optional: Delete an achievement (admin only)
+//   router.delete("/achievements/:id", (req, res) => {
+//     const { id } = req.params;
+//     const sql = "DELETE FROM achievements WHERE id = ?";
+//     con.query(sql, [id], (err, result) => {
+//       if (err) {
+//         console.error("Error deleting achievement:", err);
+//         return res.status(500).json({ error: "Database error", details: err.message });
+//       }
+//       if (result.affectedRows === 0) {
+//         return res.status(404).json({ error: "Achievement not found" });
+//       }
+//       res.json({ success: true, message: "Achievement deleted" });
+//     });
+//   });
 
 
 router.get('/jobs', (req, res) => {
@@ -766,13 +861,13 @@ router.post('/gallery', galleryUpload.single('image'), (req, res) => {
 });
 
 router.get("/alumni", (_req, res) => {
-    const sql = "SELECT a.*,c.course,a.name as name from alumnus_bio a inner join courses c on c.id = a.course_id order by a.name asc";
+    const sql = "SELECT a.*,c.course,a.name as name from alumni_accounts a inner join courses c on c.id = a.course_id order by a.name asc";
     con.query(sql, (err, result) => {
         if (err) {
             console.error("Error fetching alumni:", err);
             return res.status(500).json({ error: "Database error", details: err.message });
           }
-          console.log("Alumni query result:", result); // Debug log
+         // console.log("Alumni query result:", result); // Debug log
           res.json(result.length > 0 ? result : []); // Ensure array response
         });
       });
@@ -836,7 +931,7 @@ router.get("/up_events", (req, res) => {
 });
 
 router.get("/alumni_list", (req, res) => {
-    const sql = "SELECT a.*,c.course,a.name as name from alumnus_bio a inner join courses c on c.id = a.course_id order by a.name asc";
+    const sql = "SELECT a.*,c.course,a.name as name from alumni_accounts a inner join courses c on c.id = a.course_id order by a.name asc";
     con.query(sql, (err, result) => {
         if (err) return res.json({ Error: "Query Error" })
         if (result.length > 0) {
@@ -853,7 +948,7 @@ router.get("/alumni_list", (req, res) => {
 // Ensure the avatar storage folder exists (public/avatar)
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
-    cb(null, 'public/avatar');
+    cb(null, 'Public/avatar');
   },
   filename: function (req, file, cb) {
     // Rename file to avoid collision: userID_timestamp.ext
