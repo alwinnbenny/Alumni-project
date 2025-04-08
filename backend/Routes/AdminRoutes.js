@@ -88,52 +88,57 @@ router.post("/login", (req, res) => {
 // })
 router.post("/signup", async (req, res) => {
     const { name, email, password, userType, course_id } = req.body;
-    try {
-        const hashedPassword = await bcrypt.hash(password, 10); // Await the hash function
-
-        const sql = "SELECT * from users Where email=?";
-        con.query(sql, [email], async (err, result) => {
-            if (err) return res.json({ Error: "Query Error" });
-            if (result.length > 0) {
-                return res.json({ email: result[0].email });
-            } else {
-                if (userType == "alumnus") {
-                    // insert into alumnus_bio table
-                    const alumnusSql = "INSERT INTO alumnus_bio(name, email, course_id) VALUES(?,?,?)";
-                    con.query(alumnusSql, [name, email, course_id], async (alumnusErr, alumnusResult) => {
-                        if (alumnusErr) {
-                            console.error("Error executing SQL query for alumnus_bio:", alumnusErr);
-                            return res.status(500).json({ error: "Alumnus Bio Query Error", signupStatus: false });
-                        }
-
-                        // insert into users table with alumnus_id
-                        const alumnusId = alumnusResult.insertId;
-                        const userSql = "INSERT INTO users(name, email, password, type, alumnus_id) VALUES(?,?,?,?,?)";
-                        con.query(userSql, [name, email, hashedPassword, userType, alumnusId], (userErr, userResult) => {
-                            if (userErr) {
-                                console.error("Error executing SQL query for users:", userErr);
-                                return res.status(500).json({ error: "User Query Error", signupStatus: false });
-                            }
-                            return res.json({ message: 'Signup Successful', userId: userResult.insertId, signupStatus: true });
-                        });
-                    });
-                } else {
-                    const sql = "INSERT INTO users(name, email, password, type) VALUES(?,?,?,?)";
-                    con.query(sql, [name, email, hashedPassword, userType], (err, result) => {
-                        if (err) {
-                            console.error("Error executing SQL query for users:", err);
-                            return res.status(500).json({ error: "User Query Error", signupStatus: false });
-                        }
-                        return res.json({ message: 'Signup Successful', userId: result.insertId, signupStatus: true });
-                    });
-                }
-            }
-        });
-    } catch (error) {
-        console.error("Error hashing password:", error);
-        return res.status(500).json({ error: "Password Hashing Error", signupStatus: false });
+    if (!name || !email || !password || !userType) {
+      return res.status(400).json({ error: "Missing required fields", signupStatus: false });
     }
-});
+  
+    try {
+      const hashedPassword = await bcrypt.hash(password, 10);
+  
+      const checkEmailSql = "SELECT * FROM users WHERE email = ?";
+      con.query(checkEmailSql, [email], async (err, result) => {
+        if (err) {
+          console.error("Error checking email:", err);
+          return res.status(500).json({ error: "Database error", signupStatus: false });
+        }
+        if (result.length > 0) {
+          return res.json({ error: "Email already exists", email: result[0].email, signupStatus: false });
+        }
+  
+        if (userType === "alumnus") {
+          const alumnusSql = "INSERT INTO alumnus_bio (name, email, course_id) VALUES (?, ?, ?)";
+          con.query(alumnusSql, [name, email, course_id], (alumnusErr, alumnusResult) => {
+            if (alumnusErr) {
+              console.error("Error inserting into alumnus_bio:", alumnusErr);
+              return res.status(500).json({ error: "Alumnus insert error", signupStatus: false });
+            }
+  
+            const alumnusId = alumnusResult.insertId;
+            const userSql = "INSERT INTO users (name, email, password, type, alumnus_id) VALUES (?, ?, ?, ?, ?)";
+            con.query(userSql, [name, email, hashedPassword, userType, alumnusId], (userErr, userResult) => {
+              if (userErr) {
+                console.error("Error inserting into users:", userErr);
+                return res.status(500).json({ error: "User insert error", signupStatus: false });
+              }
+              return res.json({ message: "Signup Successful", userId: userResult.insertId, signupStatus: true });
+            });
+          });
+        } else {
+          const userSql = "INSERT INTO users (name, email, password, type) VALUES (?, ?, ?, ?)";
+          con.query(userSql, [name, email, hashedPassword, userType], (err, result) => {
+            if (err) {
+              console.error("Error inserting into users:", err);
+              return res.status(500).json({ error: "User insert error", signupStatus: false });
+            }
+            return res.json({ message: "Signup Successful", userId: result.insertId, signupStatus: true });
+          });
+        }
+      });
+    } catch (error) {
+      console.error("Error in signup:", error);
+      return res.status(500).json({ error: "Server error", signupStatus: false });
+    }
+  });
 
 
 
@@ -268,7 +273,7 @@ router.get("/counts", (req, res) => {
 
 router.get("/achievements", (req, res) => {
     const sql = `
-      SELECT a.id, a.title, a.description, a.date_achieved, a.created_at, ab.name, ab.email
+      SELECT a.id, a.title, a.description, a.date_achieved, a.created_at, a.category, a.attachment, ab.name, ab.email
       FROM achievements a
       JOIN alumnus_bio ab ON a.alumnus_id = ab.id
       ORDER BY a.created_at DESC
@@ -282,22 +287,55 @@ router.get("/achievements", (req, res) => {
     });
   });
   
-  // Add a new achievement (admin only)
-  router.post("/achievements", (req, res) => {
-    const { alumnus_id, title, description, date_achieved } = req.body;
+ /* router.post("/achievements", galleryUpload.single('attachment'), (req, res) => {
+    const { alumnus_id, title, description, date_achieved, category } = req.body;
+    const attachment = req.file ? req.file.filename : null;
+  
     if (!alumnus_id || !title) {
       return res.status(400).json({ error: "alumnus_id and title are required" });
     }
   
-    const sql = "INSERT INTO achievements (alumnus_id, title, description, date_achieved) VALUES (?, ?, ?, ?)";
-    con.query(sql, [alumnus_id, title, description, date_achieved || null], (err, result) => {
+    const sql = `
+      INSERT INTO achievements (alumnus_id, title, description, date_achieved, category, attachment)
+      VALUES (?, ?, ?, ?, ?, ?)
+    `;
+    const values = [alumnus_id, title, description, date_achieved || null, category || null, attachment];
+  
+    con.query(sql, values, (err, result) => {
       if (err) {
         console.error("Error adding achievement:", err);
         return res.status(500).json({ error: "Database error", details: err.message });
       }
       res.json({ success: true, message: "Achievement added", id: result.insertId });
     });
+  });*/
+  router.post("/achievements", galleryUpload.single('attachment'), (req, res) => {
+    const { alumnus_id, title, description, date_achieved, category } = req.body;
+    const attachment = req.file ? req.file.filename : null;
+    const sql = `
+      INSERT INTO achievements (alumnus_id, title, description, date_achieved, category, attachment)
+      VALUES (?, ?, ?, ?, ?, ?)
+    `;
+    con.query(sql, [alumnus_id, title, description, date_achieved || null, category || null, attachment], (err, result) => {
+      if (err) return res.status(500).json({ error: "Database error", details: err.message });
+      res.json({ success: true, message: "Achievement added", id: result.insertId });
+    });
   });
+
+  const verifyToken = (req, res, next) => {
+    const token = req.headers.authorization?.split(' ')[1]; // Extract "Bearer <token>"
+    if (!token) {
+      return res.status(401).json({ error: 'No token provided' });
+    }
+  
+    jwt.verify(token, 'jwt_csalumni_key', (err, decoded) => {
+      if (err) {
+        return res.status(403).json({ error: 'Invalid or expired token' });
+      }
+      req.user = decoded; // Attach decoded payload (role, email) to request
+      next();
+    });
+  };
   
   // Optional: Delete an achievement (admin only)
   router.delete("/achievements/:id", (req, res) => {
@@ -1185,6 +1223,29 @@ const getAllStudentEmails = () => {
       });
     });
   };
+
+  // Add this route after existing GET routes
+router.get("/alumnusdetails", (req, res) => {
+    const { id } = req.query;
+    if (!id) return res.status(400).json({ error: "ID is required" });
+  
+    const sql = `
+      SELECT a.*, c.course 
+      FROM alumnus_bio a 
+      LEFT JOIN courses c ON a.course_id = c.id 
+      WHERE a.id = ?
+    `;
+    con.query(sql, [id], (err, result) => {
+      if (err) {
+        console.error("Error fetching alumnus details:", err);
+        return res.status(500).json({ error: "Database error", details: err.message });
+      }
+      if (result.length === 0) {
+        return res.status(404).json({ error: "Alumnus not found" });
+      }
+      res.json(result); // Return as array to match MyAccount.jsx expectation
+    });
+  });
   
   router.post('/managejob', async (req, res) => {
     const { company, job_title, location, description, user_id } = req.body;

@@ -19,19 +19,22 @@ const MyAccount = () => {
     useEffect(() => {
         const alumnus_id = localStorage.getItem("alumnus_id");
         const fetchData = async () => {
-            try {
-                const alumnusDetailsRes = await axios.get(`${baseUrl}auth/alumnusdetails?id=${alumnus_id}`);
-                const coursesRes = await axios.get(`${baseUrl}auth/courses`);
-
-                setAcc(alumnusDetailsRes.data[0]);
-                setCourses(coursesRes.data);
-            } catch (error) {
-                console.error('Error fetching data:', error);
-                // Optionally display an error message to the user
-            }
+          try {
+            const alumnusDetailsRes = await axios.get(`${baseUrl}auth/alumnusdetails?id=${alumnus_id}`);
+            const coursesRes = await axios.get(`${baseUrl}auth/courses`);
+      
+            // Check if data exists and set first item
+            setAcc(alumnusDetailsRes.data.length > 0 ? alumnusDetailsRes.data[0] : {
+              name: '', connected_to: '', course_id: '', email: '', gender: '', password: '', batch: ''
+            });
+            setCourses(coursesRes.data);
+          } catch (error) {
+            console.error('Error fetching data:', error);
+            toast.error('Failed to load account details');
+          }
         };
-        fetchData();
-    }, []);
+        if (alumnus_id) fetchData(); // Only fetch if alumnus_id exists
+      }, []);
 
 
     const handleChange = (e) => {
