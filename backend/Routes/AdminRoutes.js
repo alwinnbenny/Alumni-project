@@ -346,7 +346,10 @@ router.get("/achievements", (req, res) => {
       return res.status(400).json({ error: "alumnus_id and title are required" });
     }
   
-    const sql = "INSERT INTO achievements (alumnus_id, title, description, date_achieved) VALUES (?, ?, ?, ?)";
+    const sql = `
+      INSERT INTO achievements (alumnus_id, title, description, date_achieved)
+      VALUES (?, ?, ?, ?)
+    `;
     con.query(sql, [alumnus_id, title, description, date_achieved || null], (err, result) => {
       if (err) {
         console.error("Error adding achievement:", err);
@@ -355,9 +358,7 @@ router.get("/achievements", (req, res) => {
       res.json({ success: true, message: "Achievement added", id: result.insertId });
     });
   });
-  
-  // Optional: Delete an achievement (admin only)
-  router.delete("/achievements/:id", (req, res) => {
+  router.delete("/achievements/:id", ensureAuthenticated, ensureAdmin, (req, res) => {
     const { id } = req.params;
     const sql = "DELETE FROM achievements WHERE id = ?";
     con.query(sql, [id], (err, result) => {
