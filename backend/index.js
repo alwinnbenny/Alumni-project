@@ -2,7 +2,7 @@ import express from "express";
 import cors from "cors";
 import { adminRouter } from "./Routes/AdminRoutes.js";
 import dotenv from "dotenv";
-
+import path from 'path';
 dotenv.config();
 
 const app = express();
@@ -29,7 +29,8 @@ app.get("/", (req, res) => {
 
 app.use("/auth", adminRouter);
 app.use('/Public', express.static('Public'));
-
+app.use('/avatar', express.static('Public/avatar'));
+app.use('/avatar', express.static(path.join(process.cwd(), 'Public/avatar')));
 const PORT = process.env.DB_PORT || 3000;
 
 app.listen(PORT, () => {

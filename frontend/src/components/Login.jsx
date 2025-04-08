@@ -128,6 +128,10 @@ const Login = () => {
                       <small className="mt-2 text-muted">
                         Don’t have an account? <Link to="/signup">Sign up here</Link>
                       </small>
+                      <small className="mt-2 text-muted d-block">
+  <Link to="/forgot-password">Forgot password?</Link>
+</small>
+
                     </div>
                     <hr className="divider" />
                     <div className="row justify-content-center">
