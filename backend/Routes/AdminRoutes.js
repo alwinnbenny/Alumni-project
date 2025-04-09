@@ -6,11 +6,11 @@ import path from "path";
 import bcrypt from "bcrypt";
 import sendEmail from "../utils/mailer.js";
 import { OAuth2Client } from "google-auth-library";
- import mysql from 'mysql2';
- 
- import sendResetEmail from '../Utils/sendResetEmail.js';
- import dotenv from 'dotenv';
-dotenv.config(); // ✅ This must come before using any process.env variables
+import mysql from 'mysql2';
+import crypto from 'crypto';
+import sendResetEmail from '../Utils/sendResetEmail.js';
+import dotenv from 'dotenv';
+dotenv.config(); //This must come before using any process.env variables
 
 
 //const db = await mysql.createConnection({ /* config */ });
@@ -292,71 +292,6 @@ function ensureAuthenticated(req, res, next) {
 
 
 
-//Forgot Password
-router.post('/forgot-password', (req, res) => {
-  const { email } = req.body;
-  const sql = "SELECT * FROM users WHERE email = ?";
-  con.query(sql, [email], (err, result) => {
-    if (err) return res.status(500).json({ message: "Server error" });
-    if (result.length === 0) return res.status(404).json({ message: "Email not found" });
-
-    const user = result[0];
-    const token = jwt.sign({ id: user.id }, process.env.JWT_SECRET, { expiresIn: '15m' });
-
-    sendResetEmail(email, token); // Email sending logic
-    res.json({ message: "Reset link sent to your email." });
-  });
-});
-// router.post('/forgot-password', async (req, res) => {
-//   const { email } = req.body;
-//   const sql = "SELECT * FROM users WHERE email = ?";  // 🔄 table changed here
-
-//   con.query(sql, [email], async (err, result) => {
-//     if (err) return res.status(500).json({ message: "Server error" });
-//     if (result.length === 0) return res.status(404).json({ message: "Email not found" });
-
-//     const user = result[0];
-//     const token = jwt.sign({ id: user.id }, process.env.JWT_SECRET, { expiresIn: '15m' });
-
-//     try {
-//       await sendResetEmail(email, token);
-//       res.json({ message: "Reset link sent to your email." });
-//     } catch (error) {
-//       console.error("Error sending reset email:", error);
-//       res.status(500).json({ message: "Failed to send reset email. Try again later." });
-//     }
-//   });
-// });
-
-//Reset Password
-router.post('/reset-password/:token', (req, res) => {
-  const { token } = req.params;
-  const { password } = req.body;
-  jwt.verify(token, process.env.JWT_SECRET, (err, decoded) => {
-    if (err) return res.status(400).json({ message: "Invalid or expired token" });
-
-    const hash = bcrypt.hashSync(password, 10);
-    con.query("UPDATE users SET password = ? WHERE id = ?", [hash, decoded.id], (err2) => {
-      if (err2) return res.status(500).json({ message: "Error updating password" });
-      res.json({ message: "Password reset successful" });
-    });
-  });
-});
-// router.post('/reset-password/:token', (req, res) => {
-//   const { token } = req.params;
-//   const { password } = req.body;
-
-//   jwt.verify(token, process.env.JWT_SECRET, (err, decoded) => {
-//     if (err) return res.status(400).json({ message: "Invalid or expired token" });
-
-//     const hash = bcrypt.hashSync(password, 10);
-//     const sql = "UPDATE users SET password = ? WHERE id = ?";  // 🔄 updated table name
-//     con.query(sql, [hash, decoded.id], (err2) => {
-//       if (err2) return res.status(500).json({ message: "Error updating password" });
-//       res.json({ message: "Password reset successful" });
-//     });
-//   });
-// });
 
 router.get("/achievements", (req, res) => {
     const sql = `
@@ -498,6 +433,97 @@ router.put('/managejob', (req, res) => {
     } else {
         return res.status(400).json({ error: 'Invalid Request: No ID provided for update' });
     }
+});
+
+// Forgot Password Route
+router.post("/forgot-password", (req, res) => {
+  const { email } = req.body;
+  if (!email) {
+    return res.status(400).json({ error: "Email is required" });
+  }
+
+  const checkEmailSql = "SELECT * FROM users WHERE email = ?";
+  con.query(checkEmailSql, [email], (err, result) => {
+    if (err) {
+      console.error("Error checking email:", err);
+      return res.status(500).json({ error: "Database error", details: err.message });
+    }
+    if (result.length === 0) {
+      return res.status(404).json({ error: "Email not found" });
+    }
+
+    // Generate reset token
+    const resetToken = crypto.randomBytes(20).toString('hex');
+    const resetTokenExpiry = Date.now() + 3600000; // 1 hour expiry
+
+    // Store token in users table (add reset_token and reset_token_expiry columns if not present)
+    const updateSql = `
+      UPDATE users 
+      SET reset_token = ?, reset_token_expiry = ?
+      WHERE email = ?
+    `;
+    con.query(updateSql, [resetToken, resetTokenExpiry, email], (err) => {
+      if (err) {
+        console.error("Error saving reset token:", err);
+        return res.status(500).json({ error: "Database error", details: err.message });
+      }
+
+      // Send reset email
+      const resetLink = `${process.env.BASE_URL}/reset-password/${resetToken}`;
+      const html = `<p>You requested a password reset. Click <a href="${resetLink}">here</a> to reset your password. This link expires in 1 hour.</p>`;
+      
+      sendEmail(email, "Password Reset Request - Alumni BZU", html)
+        .then(() => {
+          res.json({ success: true, message: "Reset link sent to your email" });
+        })
+        .catch((emailErr) => {
+          console.error("Error sending reset email:", emailErr);
+          res.status(500).json({ error: "Failed to send reset email", details: emailErr.message });
+        });
+    });
+  });
+});
+
+// Reset Password Route
+router.post("/reset-password/:token", (req, res) => {
+  const { token } = req.params;
+  const { password } = req.body;
+
+  if (!password) {
+    return res.status(400).json({ error: "Password is required" });
+  }
+
+  const sql = "SELECT * FROM users WHERE reset_token = ? AND reset_token_expiry > ?";
+  con.query(sql, [token, Date.now()], (err, result) => {
+    if (err) {
+      console.error("Error verifying token:", err);
+      return res.status(500).json({ error: "Database error", details: err.message });
+    }
+    if (result.length === 0) {
+      return res.status(400).json({ error: "Invalid or expired token" });
+    }
+
+    // Hash new password
+    bcrypt.hash(password, 10, (hashErr, hashedPassword) => {
+      if (hashErr) {
+        console.error("Error hashing password:", hashErr);
+        return res.status(500).json({ error: "Password hashing error" });
+      }
+
+      const updateSql = `
+        UPDATE users 
+        SET password = ?, reset_token = NULL, reset_token_expiry = NULL 
+        WHERE reset_token = ?
+      `;
+      con.query(updateSql, [hashedPassword, token], (updateErr) => {
+        if (updateErr) {
+          console.error("Error updating password:", updateErr);
+          return res.status(500).json({ error: "Database error", details: updateErr.message });
+        }
+        res.json({ success: true, message: "Password reset successfully" });
+      });
+    });
+  });
 });
 
 router.delete('/jobs/:id', (req, res) => {
@@ -1366,4 +1392,4 @@ router.get("/alumnusdetails", (req, res) => {
     });
   });
 
-export { router as adminRouter } 
+export { router as adminRouter }
