@@ -292,7 +292,7 @@ function ensureAuthenticated(req, res, next) {
 
 
 
-// Forgot Password
+//Forgot Password
 router.post('/forgot-password', (req, res) => {
   const { email } = req.body;
   const sql = "SELECT * FROM users WHERE email = ?";
@@ -307,8 +307,28 @@ router.post('/forgot-password', (req, res) => {
     res.json({ message: "Reset link sent to your email." });
   });
 });
+// router.post('/forgot-password', async (req, res) => {
+//   const { email } = req.body;
+//   const sql = "SELECT * FROM users WHERE email = ?";  // 🔄 table changed here
 
-// Reset Password
+//   con.query(sql, [email], async (err, result) => {
+//     if (err) return res.status(500).json({ message: "Server error" });
+//     if (result.length === 0) return res.status(404).json({ message: "Email not found" });
+
+//     const user = result[0];
+//     const token = jwt.sign({ id: user.id }, process.env.JWT_SECRET, { expiresIn: '15m' });
+
+//     try {
+//       await sendResetEmail(email, token);
+//       res.json({ message: "Reset link sent to your email." });
+//     } catch (error) {
+//       console.error("Error sending reset email:", error);
+//       res.status(500).json({ message: "Failed to send reset email. Try again later." });
+//     }
+//   });
+// });
+
+//Reset Password
 router.post('/reset-password/:token', (req, res) => {
   const { token } = req.params;
   const { password } = req.body;
@@ -322,6 +342,22 @@ router.post('/reset-password/:token', (req, res) => {
     });
   });
 });
+// router.post('/reset-password/:token', (req, res) => {
+//   const { token } = req.params;
+//   const { password } = req.body;
+
+//   jwt.verify(token, process.env.JWT_SECRET, (err, decoded) => {
+//     if (err) return res.status(400).json({ message: "Invalid or expired token" });
+
+//     const hash = bcrypt.hashSync(password, 10);
+//     const sql = "UPDATE users SET password = ? WHERE id = ?";  // 🔄 updated table name
+//     con.query(sql, [hash, decoded.id], (err2) => {
+//       if (err2) return res.status(500).json({ message: "Error updating password" });
+//       res.json({ message: "Password reset successful" });
+//     });
+//   });
+// });
+
 router.get("/achievements", (req, res) => {
     const sql = `
       SELECT a.id, a.title, a.description, a.date_achieved, a.created_at, a.category, a.attachment, ab.name, ab.email
@@ -338,7 +374,7 @@ router.get("/achievements", (req, res) => {
     });
   });
   
- /* router.post("/achievements", galleryUpload.single('attachment'), (req, res) => {
+  router.post("/achievements", galleryUpload.single('attachment'), (req, res) => {
     const { alumnus_id, title, description, date_achieved, category } = req.body;
     const attachment = req.file ? req.file.filename : null;
   
@@ -1330,4 +1366,4 @@ router.get("/alumnusdetails", (req, res) => {
     });
   });
 
-export { router as adminRouter }
+export { router as adminRouter } 
