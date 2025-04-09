@@ -338,7 +338,7 @@ router.get("/achievements", (req, res) => {
     });
   });
   
- /* router.post("/achievements", galleryUpload.single('attachment'), (req, res) => {
+  router.post("/achievements", galleryUpload.single('attachment'), (req, res) => {
     const { alumnus_id, title, description, date_achieved, category } = req.body;
     const attachment = req.file ? req.file.filename : null;
   
