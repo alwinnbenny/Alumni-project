@@ -920,16 +920,15 @@ router.post('/gallery', galleryUpload.single('image'), (req, res) => {
 });
 
 router.get("/alumni", (_req, res) => {
-    const sql = "SELECT a.*,c.course,a.name as name from alumni_accounts a inner join courses c on c.id = a.course_id order by a.name asc";
-    con.query(sql, (err, result) => {
-        if (err) {
-            console.error("Error fetching alumni:", err);
-            return res.status(500).json({ error: "Database error", details: err.message });
-          }
-         // console.log("Alumni query result:", result); // Debug log
-          res.json(result.length > 0 ? result : []); // Ensure array response
-        });
-      });
+  const sql = "SELECT a.*, c.course, a.name as name FROM alumnus_bio a LEFT JOIN courses c ON c.id = a.course_id ORDER BY a.name ASC";
+  con.query(sql, (err, result) => {
+    if (err) {
+      console.error("Error fetching alumni:", err);
+      return res.status(500).json({ error: "Database error", details: err.message });
+    }
+    res.json(result.length > 0 ? result : []);
+  });
+});
 
 router.delete("/alumni/:id", (req, res) => {
     const eid = req.params.id;
@@ -944,7 +943,7 @@ router.delete("/alumni/:id", (req, res) => {
 
 })
 
-router.put('/viewalumni', (req, res) => {
+/*router.put('/viewalumni', (req, res) => {
     const { status, id } = req.body;
     const sql = 'UPDATE alumnus_bio SET status=? WHERE id=?';
     con.query(sql, [status, id], (err, result) => {
@@ -954,8 +953,24 @@ router.put('/viewalumni', (req, res) => {
         }
         return res.json({ message: 'Status Updated Successfully' });
     });
+});*/
+router.put('/viewalumni', (req, res) => {
+  const { status, id } = req.body;
+  if (!id || status === undefined) {
+    return res.status(400).json({ error: 'ID and status are required' });
+  }
+  const sql = 'UPDATE alumnus_bio SET status=? WHERE id=?';
+  con.query(sql, [status, id], (err, result) => {
+    if (err) {
+      console.error('Error executing SQL query:', err);
+      return res.status(500).json({ error: 'Database Error', details: err.message });
+    }
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ error: 'Alumnus not found' });
+    }
+    return res.json({ message: 'Status Updated Successfully' });
+  });
 });
-
 
 router.get("/settings", (req, res) => {
     const sql = "SELECT * FROM system_settings";
@@ -990,7 +1005,7 @@ router.get("/up_events", (req, res) => {
 });
 
 router.get("/alumni_list", (req, res) => {
-    const sql = "SELECT a.*,c.course,a.name as name from alumni_accounts a inner join courses c on c.id = a.course_id order by a.name asc";
+    const sql = "SELECT a.*, c.course, a.name as name FROM alumnus_bio a LEFT JOIN courses c ON c.id = a.course_id ORDER BY a.name ASC";
     con.query(sql, (err, result) => {
         if (err) return res.json({ Error: "Query Error" })
         if (result.length > 0) {
