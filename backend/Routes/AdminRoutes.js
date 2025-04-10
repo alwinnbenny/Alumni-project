@@ -273,23 +273,67 @@ router.get("/counts", (req, res) => {
     });
 });
 // Example middleware — adjust based on how you're managing auth (e.g., sessions, JWTs)
-function ensureAuthenticated(req, res, next) {
-    if (!req.user) {
-      return res.status(401).json({ error: "Unauthorized" });
-    }
-    next();
-  }
+// function ensureAuthenticated(req, res, next) {
+//     if (!req.user) {
+//       return res.status(401).json({ error: "Unauthorized" });
+//     }
+//     next();
+//   }
+// function ensureAuthenticated(req, res, next) {
+//   const token = req.headers.authorization?.split(' ')[1]; // Get token from Authorization header
   
+//   if (!token) {
+//     return res.status(401).json({ error: "Unauthorized" });
+//   }
+
+//   try {
+//     const decoded = jwt.verify(token, 'your-secret-key'); // Verify the token
+//     req.user = decoded; // Attach the decoded user info to req.user
+//     next(); // Proceed to the next middleware
+//   } catch (err) {
+//     return res.status(401).json({ error: "Invalid or expired token" });
+//   }
+// }
+
+
+
+function ensureAuthenticated(req, res, next) {
+  const token = req.headers['authorization'];  // Get token from the Authorization header
+  
+  if (!token) {
+    return res.status(401).json({ error: "Unauthorized, token missing" });
+  }
+
+  // Verify the token
+  jwt.verify(token, process.env.JWT_SECRET, (err, decoded) => {
+    if (err) {
+      return res.status(401).json({ error: "Invalid token" });
+    }
+
+    // Set the decoded user info to req.user
+    req.user = decoded;  // decoded will contain the user data (e.g., user.id)
+    next();  // Proceed to the next middleware or route handler
+  });
+}
+
   // Optional: for role-based access (e.g., admin only)
+  // function ensureAdmin(req, res, next) {
+  //   if (req.user?.role !== "admin") {
+  //     return res.status(403).json({ error: "Admin access required" });
+  //   }
+  //   next();
+  // }
+  
+
   function ensureAdmin(req, res, next) {
-    if (req.user?.role !== "admin") {
+    //console.log("User role:", req.user?.role); // Log to check the role
+    //if (req.user?.role !== "admin") {
+      if (req.user?.email !== "admin@gmail.com") {
       return res.status(403).json({ error: "Admin access required" });
     }
-    next();
+    next(); // Proceed to the next middleware if the user is an admin
   }
   
-
-
 
 
 //Forgot Password
@@ -383,10 +427,10 @@ router.get("/achievements", (req, res) => {
     }
   
     const sql = `
-      INSERT INTO achievements (alumnus_id, title, description, date_achieved)
-      VALUES (?, ?, ?, ?)
+      INSERT INTO achievements (alumnus_id, title, description, date_achieved,category,attachment)
+      VALUES (?, ?, ?, ?,?,?)
     `;
-    con.query(sql, [alumnus_id, title, description, date_achieved || null], (err, result) => {
+    con.query(sql, [alumnus_id, title, description, date_achieved || null,category || null,attachment], (err, result) => {
       if (err) {
         console.error("Error adding achievement:", err);
         return res.status(500).json({ error: "Database error", details: err.message });
@@ -394,21 +438,184 @@ router.get("/achievements", (req, res) => {
       res.json({ success: true, message: "Achievement added", id: result.insertId });
     });
   });
-  router.delete("/achievements/:id", ensureAuthenticated, ensureAdmin, (req, res) => {
-    const { id } = req.params;
-    const sql = "DELETE FROM achievements WHERE id = ?";
-    con.query(sql, [id], (err, result) => {
-      if (err) {
-        console.error("Error deleting achievement:", err);
-        return res.status(500).json({ error: "Database error", details: err.message });
-      }
-      if (result.affectedRows === 0) {
-        return res.status(404).json({ error: "Achievement not found" });
-      }
-      res.json({ success: true, message: "Achievement deleted" });
-    });
-  });
+  const adminEmail = 'admin@gmail.com';  // Hardcoded admin email
+
+  // Middleware to verify JWT token and extract user info (email)
+  const authenticateUser = (req, res, next) => {
+    const token = req.headers['authorization']?.split(' ')[1];  // Extract token from the Authorization header
   
+    if (!token) {
+      return res.status(401).json({ error: "Unauthorized" });
+    }
+  
+    try {
+      const decoded = jwt.verify(token, 'your-secret-key');  // Decode the token to extract user info
+      req.user = decoded;  // Attach the decoded user info to the request object
+      next();
+    } catch (error) {
+      return res.status(401).json({ error: "Unauthorized" });
+    }
+  };
+  
+  // Route to delete achievement
+  // router.delete("/achievements/:id", (req, res) => {
+  //   const { id } = req.params;
+  
+  //   // Query to get the email from alumnus_bio using the foreign key relationship
+  //   const sql = `
+  //     SELECT ab.email
+  //     FROM achievements a
+  //     JOIN alumnus_bio ab ON a.alumnus_id = ab.id
+  //     WHERE a.id = ?
+  //   `;
+  
+  //   con.query(sql, [id], (err, result) => {
+  //     if (err) {
+  //       console.error("Error fetching email:", err);
+  //       return res.status(500).json({ error: "Database error", details: err.message });
+  //     }
+  
+  //     if (result.length === 0) {
+  //       return res.status(404).json({ error: "Achievement not found" });
+  //     }
+  
+  //     // Retrieve email from the result
+  //     const email = result[0].email;
+  
+  //     // Check if the email is admin@gmail.com
+  //     if (email !== "admin@gmail.com") {
+  //       return res.status(403).json({ error: "Only admin can delete achievements." });
+  //     }
+  
+  //     // Proceed with deletion if the email is 'admin@gmail.com'
+  //     const deleteSql = "DELETE FROM achievements WHERE id = ?";
+      
+  //     con.query(deleteSql, [id], (deleteErr, deleteResult) => {
+  //       if (deleteErr) {
+  //         console.error("Error deleting achievement:", deleteErr);
+  //         return res.status(500).json({ error: "Database error", details: deleteErr.message });
+  //       }
+  
+  //       if (deleteResult.affectedRows === 0) {
+  //         return res.status(404).json({ error: "Achievement not found" });
+  //       }
+  
+  //       res.json({ success: true, message: "Achievement deleted" });
+  //     });
+  //   });
+  // });
+
+  // router.delete("/achievements/:id", (req, res) => {
+  //   const { id } = req.params;
+  
+  //   // Assuming that the logged-in user's ID is stored in req.user.id after authentication
+  //   const userId = req.user.id;
+  
+  //   // Query to get the email from users table
+  //   const getEmailSql = "SELECT email FROM users WHERE id = ?";
+    
+  //   con.query(getEmailSql, [userId], (err, result) => {
+  //     if (err) {
+  //       console.error("Error fetching user email:", err);
+  //       return res.status(500).json({ error: "Database error", details: err.message });
+  //     }
+  
+  //     if (result.length === 0) {
+  //       return res.status(404).json({ error: "User not found" });
+  //     }
+  
+  //     const email = result[0].email;
+  
+  //     // Log the email for debugging
+  //     console.log("User email fetched:", email);
+  
+  //     // Check if the email is admin@gmail.com
+  //     if (email !== "admin@gmail.com") {
+  //       console.log("Unauthorized attempt to delete by email:", email); // Debug log
+  //       return res.status(403).json({ error: "Only admin can delete achievements." });
+  //     }
+  
+  //     // If the email is admin, proceed with deleting the achievement
+  //     const deleteSql = "DELETE FROM achievements WHERE id = ?";
+  
+  //     con.query(deleteSql, [id], (deleteErr, deleteResult) => {
+  //       if (deleteErr) {
+  //         console.error("Error deleting achievement:", deleteErr);
+  //         return res.status(500).json({ error: "Database error", details: deleteErr.message });
+  //       }
+  
+  //       if (deleteResult.affectedRows === 0) {
+  //         return res.status(404).json({ error: "Achievement not found" });
+  //       }
+  
+  //       res.json({ success: true, message: "Achievement deleted" });
+  //     });
+  //   });
+  // });
+  //above is new
+  
+  // router.delete("/achievements/:id", authenticateUser, (req, res) => {
+  //   const { id } = req.params;
+  
+  //   // Get the email from the user object attached by authenticateUser middleware
+  //   const email = req.user.email;
+  
+  //   // Check if the email matches the hardcoded admin email
+  //   if (email !== adminEmail) {
+  //     return res.status(403).json({ error: "Forbidden - Admin access required" });
+  //   }
+  
+  //   // SQL query to delete the achievement
+  //   const sql = "DELETE FROM achievements WHERE id = ?";
+    
+  //   con.query(sql, [id], (err, result) => {
+  //     if (err) {
+  //       console.error("Error deleting achievement:", err);
+  //       return res.status(500).json({ error: "Database error", details: err.message });
+  //     }
+  
+  //     if (result.affectedRows === 0) {
+  //       return res.status(404).json({ error: "Achievement not found" });
+  //     }
+  
+  //     res.json({ success: true, message: "Achievement deleted" });
+  //   });
+  // });
+
+
+//   router.delete("/achievements/:id", ensureAuthenticated, ensureAdmin, (req, res) => {
+//     const { id } = req.params;
+//   //   const sql = "DELETE FROM achievements WHERE id = ?";
+//   //   // console.log(req.user);  // Check user object to verify role
+
+//   //   con.query(sql, [id], (err, result) => {
+//   //     if (err) {
+//   //       //console.log(req.user);  // Check user object to verify role
+//   //       console.error("Error deleting achievement:", err);
+//   //       return res.status(500).json({ error: "Database error", details: err.message });
+//   //     }
+//   //     if (result.affectedRows === 0) {
+//   //       return res.status(404).json({ error: "Achievement not found" });
+//   //     }
+//   //     res.json({ success: true, message: "Achievement deleted" });
+//   //   });
+//   // });
+//   const sql = "DELETE FROM achievements WHERE id = ?";
+// console.log(`Deleting achievement with ID: ${id}`);
+
+// con.query(sql, [id], (err, result) => {
+//   if (err) {
+//     console.error("Error deleting achievement:", err);
+//     return res.status(500).json({ error: "Database error", details: err.message });
+//   }
+
+//   if (result.affectedRows === 0) {
+//     return res.status(404).json({ error: "Achievement not found" });
+//   }
+
+//   res.json({ success: true, message: "Achievement deleted" });
+// });
+//   });
   
 //   // Add a new achievement (admin only)
 //   router.post("/achievements", (req, res) => {
