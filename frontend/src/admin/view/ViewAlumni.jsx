@@ -17,7 +17,7 @@ const ViewAlumni = () => {
             setAlumni(location.state.data);
             setAccStatus(location.state.data.status);
 
-            // console.log(location.state.data.status);
+            console.log(location.state.data.status);
         }
     }, [location.state]);
 
@@ -34,9 +34,11 @@ const ViewAlumni = () => {
                 } else {
                     toast.success("Account Unverified");
                 }
-            })
-            .catch((err) => console.log(err))
-    }
+                // Update local state to reflect change immediately
+                setAlumni(prev => ({ ...prev, status: num }));
+              })
+              .catch((err) => console.log(err));
+          };
 
     return (
         <>

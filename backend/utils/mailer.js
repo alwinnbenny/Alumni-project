@@ -21,7 +21,7 @@ const sendEmail = async (to, subject, html) => {
   });
 
   const mailOptions = {
-    from: "CS-BZU",
+    from: "Alumni CEP",
     to,
     subject,
     text,
