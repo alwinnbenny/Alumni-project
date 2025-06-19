@@ -1,10 +1,12 @@
 {
   "version": 2,
   "builds": [
-    { "src": "dist/*.html", "use": "@vercel/static" }
+    { "src": "*.html", "use": "@vercel/static" },
+    { "src": "js/*.js", "use": "@vercel/static" }
   ],
   "routes": [
-    { "src": "/(.*)", "dest": "/dist/index.html" },
-    { "src": "/favicon.ico", "dest": "/dist/favicon.ico" }
+    { "src": "/(.*)", "dest": "/index.html" },
+    { "src": "/js/(.*)", "dest": "/js/$1" },
+    { "src": "/favicon.ico", "dest": "/public/favicon.ico" }
   ]
 }

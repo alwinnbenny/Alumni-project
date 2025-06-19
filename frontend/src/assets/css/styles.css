@@ -2635,7 +2635,7 @@ textarea.form-control-lg {
 
 .was-validated :invalid ~ .invalid-feedback,
 .was-validated :invalid ~ .invalid-tooltip,
-.is-invalid ~ .invalid-feedback,
+.is-invalid ~ .invalid-,
 .is-invalid ~ .invalid-tooltip {
   display: block;
 }
