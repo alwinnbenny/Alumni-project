@@ -287,13 +287,7 @@ function ensureAuthenticated(req, res, next) {
     }
     next();
   }
-  
-
-
-
-
-
-router.get("/achievements", (req, res) => {
+  router.get("/achievements", (req, res) => {
     const sql = `
       SELECT a.id, a.title, a.description, a.date_achieved, a.created_at, a.category, a.attachment, ab.name, ab.email
       FROM achievements a
@@ -318,10 +312,10 @@ router.get("/achievements", (req, res) => {
     }
   
     const sql = `
-      INSERT INTO achievements (alumnus_id, title, description, date_achieved)
-      VALUES (?, ?, ?, ?)
+      INSERT INTO achievements (alumnus_id, title, description, date_achieved,category,attachment)
+      VALUES (?, ?, ?, ?,?,?)
     `;
-    con.query(sql, [alumnus_id, title, description, date_achieved || null], (err, result) => {
+    con.query(sql, [alumnus_id, title, description, date_achieved || null,category || null,attachment], (err, result) => {
       if (err) {
         console.error("Error adding achievement:", err);
         return res.status(500).json({ error: "Database error", details: err.message });
@@ -329,54 +323,24 @@ router.get("/achievements", (req, res) => {
       res.json({ success: true, message: "Achievement added", id: result.insertId });
     });
   });
-  router.delete("/achievements/:id", ensureAuthenticated, ensureAdmin, (req, res) => {
-    const { id } = req.params;
-    const sql = "DELETE FROM achievements WHERE id = ?";
-    con.query(sql, [id], (err, result) => {
-      if (err) {
-        console.error("Error deleting achievement:", err);
-        return res.status(500).json({ error: "Database error", details: err.message });
-      }
-      if (result.affectedRows === 0) {
-        return res.status(404).json({ error: "Achievement not found" });
-      }
-      res.json({ success: true, message: "Achievement deleted" });
-    });
-  });
+  const adminEmail = 'admin@gmail.com';  // Hardcoded admin email
+
+  // Middleware to verify JWT token and extract user info (email)
+  const authenticateUser = (req, res, next) => {
+    const token = req.headers['authorization']?.split(' ')[1];  // Extract token from the Authorization header
   
+    if (!token) {
+      return res.status(401).json({ error: "Unauthorized" });
+    }
   
-//   // Add a new achievement (admin only)
-//   router.post("/achievements", (req, res) => {
-//     const { alumnus_id, title, description, date_achieved } = req.body;
-//     if (!alumnus_id || !title) {
-//       return res.status(400).json({ error: "alumnus_id and title are required" });
-//     }
-  
-//     const sql = "INSERT INTO achievements (alumnus_id, title, description, date_achieved) VALUES (?, ?, ?, ?)";
-//     con.query(sql, [alumnus_id, title, description, date_achieved || null], (err, result) => {
-//       if (err) {
-//         console.error("Error adding achievement:", err);
-//         return res.status(500).json({ error: "Database error", details: err.message });
-//       }
-//       res.json({ success: true, message: "Achievement added", id: result.insertId });
-//     });
-//   });
-  
-//   // Optional: Delete an achievement (admin only)
-//   router.delete("/achievements/:id", (req, res) => {
-//     const { id } = req.params;
-//     const sql = "DELETE FROM achievements WHERE id = ?";
-//     con.query(sql, [id], (err, result) => {
-//       if (err) {
-//         console.error("Error deleting achievement:", err);
-//         return res.status(500).json({ error: "Database error", details: err.message });
-//       }
-//       if (result.affectedRows === 0) {
-//         return res.status(404).json({ error: "Achievement not found" });
-//       }
-//       res.json({ success: true, message: "Achievement deleted" });
-//     });
-//   });
+    try {
+      const decoded = jwt.verify(token, 'your-secret-key');  // Decode the token to extract user info
+      req.user = decoded;  // Attach the decoded user info to the request object
+      next();
+    } catch (error) {
+      return res.status(401).json({ error: "Unauthorized" });
+    }
+  };
 
 
 router.get('/jobs', (req, res) => {

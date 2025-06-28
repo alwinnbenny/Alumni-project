@@ -71,6 +71,8 @@ function AppRouter() {
         <Route path="/jobs" element={<Careers />} />
         <Route path="/forums" element={<Forum />} />
         <Route path="/about" element={<About />} />
+        <Route path="/achievements" element={<Achievements />} /> {/* New public route */}
+
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<Signup />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
