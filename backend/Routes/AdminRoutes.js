@@ -436,7 +436,7 @@ router.post("/forgot-password", (req, res) => {
       const resetLink = `${process.env.BASE_URL}/reset-password/${resetToken}`;
       const html = `<p>You requested a password reset. Click <a href="${resetLink}">here</a> to reset your password. This link expires in 1 hour.</p>`;
       
-      sendEmail(email, "Password Reset Request - Alumni BZU", html)
+      sendEmail(email, "Password Reset Request - Alumni CEP", html)
         .then(() => {
           res.json({ success: true, message: "Reset link sent to your email" });
         })
