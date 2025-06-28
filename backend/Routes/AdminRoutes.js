@@ -8,7 +8,7 @@ import sendEmail from "../utils/mailer.js";
 import { OAuth2Client } from "google-auth-library";
 import mysql from 'mysql2';
 import crypto from 'crypto';
-import sendResetEmail from '../Utils/sendResetEmail.js';
+import sendResetEmail from '../utils/sendResetEmail.js';
 import dotenv from 'dotenv';
 dotenv.config(); //This must come before using any process.env variables
 
