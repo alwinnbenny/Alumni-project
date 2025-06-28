@@ -28,7 +28,7 @@ const Footer = () => {
             </div>
             <div className="col-lg-4 mr-auto text-center">
               <FaEnvelope className={iconClasses} />
-              <a className="d-block" href="mailto:cs@bzu.edu.pk">cepoonjar.ihrd@gmail.com</a>
+              <a className="d-block" href="mailto:cepoonjar.ihrd@gmail.com">cepoonjar.ihrd@gmail.com</a>
             </div>
           </div>
         </div>

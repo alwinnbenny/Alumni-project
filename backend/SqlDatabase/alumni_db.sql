@@ -232,14 +232,7 @@ CREATE TABLE `system_settings` (
 -- Dumping data for table `system_settings`
 --
 
-INSERT INTO `system_settings` (`id`, `name`, `email`, `contact`, `cover_img`, `about_content`) VALUES
-(1, 'Alumni- BZU', 'cs@bzu.edu.pk', '(+92) 61 9210134', '1602738120_pngtree-purple-hd-business-banner-image_5493.jpg', 'Bahauddin Zakariya University is located in Multan, Punjab, Pakistan. It is the Largest university of South Punjab. Bahauddin Zakariya University was formerly known as Multan University. It was renamed in honour of Hazrat Baha-ud-din Zakariya (RA). Bahauddin Zakariya University has 10 Faculties, 2 Sub-Campuses (Lodhran & Vehari) and 80 Departments and it is offering 94 Undergraudate Programs, 69 Graduate(MS) Programs, 48 Graduate (PhD) Programs, 36 BS(5th Semester) Programs, 5 ADP Programs, 13 Diploma Programs and 13 Short Courses. There are total 646 faculty members, in which 494 faculty members are PhD degree holders.\r\n<br/><center><h3>Department of Computer Science</h2></center><br/>Established: 1995.\r\nThe Department provides an excellent educational environment that aims at bringing out the best. Our curriculum encompasses the recommendation of IEEE and ACM joint committee on CS Curriculum, National Curriculum Revision Committee, and duly approved by the HEC, MoE and MoST.');
 
--- --------------------------------------------------------
-
---
--- Table structure for table `users`
---
 
 CREATE TABLE `users` (
   `id` int(30) NOT NULL,
