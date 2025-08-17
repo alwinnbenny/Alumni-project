@@ -12,7 +12,9 @@ import Forum from "./components/Forum";
 import About from "./components/About";
 import Login from "./components/Login";
 import ForgotPassword from './components/ForgotPassword';
-import ResetPassword from './components/ResetPassword'; // adjust path as needed
+import ResetPassword from './components/ResetPassword'; 
+import Profile from "./components/Profile";
+// adjust path as needed
 
 import Signup from "./components/Signup";
 import MyAccount from "./components/MyAccount";
@@ -99,6 +101,8 @@ function AppRouter() {
         {isLoggedIn && <Route path="account" element={<MyAccount />} />}
         <Route path="forum/view" element={<View_Forum />} />
         <Route path="jobs/add" element={<ManageJobs />} />
+        <Route path="profile" element={<Profile />} />
+
       </Routes>
       {!isDashboardRoute && <Footer />}
     </>

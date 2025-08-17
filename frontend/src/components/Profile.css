@@ -1,0 +1,190 @@
+/* ===== Layout Wrapper ===== */
+.profile-wrapper {
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  gap: 28px;
+margin: 80px auto 20px;
+  max-width: 900px;
+  padding: 10px;
+  font-family: Arial, sans-serif;
+}
+
+/* ===== Profile Container (Left Side) ===== */
+.profile-container {
+  flex: 2;
+  padding: 20px;
+  background: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  max-width: 500px;
+  text-align: center;
+}
+
+.profile-header {
+  margin-bottom: 20px;
+}
+
+.avatar {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 3px solid #ddd;
+  margin-bottom: 12px;
+}
+
+.profile-header h2 {
+  margin: 8px 0 4px;
+  font-size: 22px;
+  color: #222;
+}
+
+.profile-header p {
+  font-size: 14px;
+  color: #666;
+}
+
+.profile-details {
+  text-align: center;
+  margin-top: 15px;
+}
+
+.profile-details p {
+  margin: 6px 0;
+  font-size: 15px;
+  color: #333;
+}
+
+/* ===== Bio Box (Right Side) ===== */
+.bio-box {
+  flex: 1;
+  padding: 15px;
+  background: #f9fafb;
+  border-radius: 10px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.08);
+  max-width: 280px;
+  min-height: 200px;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+}
+
+.bio-heading {
+  font-size: 16px;
+  font-weight: bold;
+  margin-bottom: 14px;
+  text-align: center;
+  color: #333;
+}
+
+/* ===== Buttons ===== */
+.bio-btn,
+.save-bio-btn {
+  display: block;
+  width: 90px;
+  border: none;
+  border-radius: 6px;
+  padding: 8px 5px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background 0.2s ease-in-out;
+  
+}
+
+.bio-btn {
+  background: #2563eb;
+  color: white;
+  margin-bottom: 12px;
+  
+}
+
+.bio-btn:hover {
+  background: #1d4ed8;
+}
+
+.save-bio-btn {
+  background: #10b981;
+  color: white;
+  ;
+}
+
+.save-bio-btn:hover {
+  background: #059669;
+}
+
+/* ===== Bio Input Area ===== */
+.bio-input textarea {
+  width: 100%;
+  padding: 10px;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+  font-size: 14px;
+  resize: none;
+  margin-bottom: 10px;
+  font-family: inherit;
+  
+}
+
+/* ===== Displayed Bio ===== */
+.bio-display {
+  margin-top: 10px;
+  padding: 10px;
+  background: #ffffff;
+  border-radius: 6px;
+  border: 1px solid #ddd;
+  text-align: center;
+  font-size: 14px;
+  font-style: italic;
+  color: #444;
+  white-space: pre-wrap; /* keeps line breaks */
+}
+
+/* ===== Responsive Design ===== */
+@media (max-width: 768px) {
+  .profile-wrapper {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .profile-container,
+  .bio-box {
+    max-width: 100%;
+  }
+}
+.bio-actions {
+  display: flex;
+  gap: 12px;   /* space between edit and delete icons */
+}
+.bio-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between; /* pushes heading left, icons right */
+  margin-bottom: 10px;
+}
+
+.bio-heading {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.bio-actions {
+  display: flex;
+  gap: 10px; /* space between icons */
+}
+
+.bio-icon {
+  cursor: pointer;
+  font-size: 18px;
+  color: #555;
+  transition: color 0.2s;
+}
+
+.bio-icon:hover {
+  color: #007bff; /* blue on hover */
+}
+
+.bio-icon.delete:hover {
+  color: red;
+}

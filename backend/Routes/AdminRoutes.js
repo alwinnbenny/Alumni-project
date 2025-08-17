@@ -341,7 +341,199 @@ function ensureAuthenticated(req, res, next) {
       return res.status(401).json({ error: "Unauthorized" });
     }
   };
+  
+  // Route to delete achievement
+  // router.delete("/achievements/:id", (req, res) => {
+  //   const { id } = req.params;
+  
+  //   // Query to get the email from alumnus_bio using the foreign key relationship
+  //   const sql = `
+  //     SELECT ab.email
+  //     FROM achievements a
+  //     JOIN alumnus_bio ab ON a.alumnus_id = ab.id
+  //     WHERE a.id = ?
+  //   `;
+  
+  //   con.query(sql, [id], (err, result) => {
+  //     if (err) {
+  //       console.error("Error fetching email:", err);
+  //       return res.status(500).json({ error: "Database error", details: err.message });
+  //     }
+  
+  //     if (result.length === 0) {
+  //       return res.status(404).json({ error: "Achievement not found" });
+  //     }
+  
+  //     // Retrieve email from the result
+  //     const email = result[0].email;
+  
+  //     // Check if the email is admin@gmail.com
+  //     if (email !== "admin@gmail.com") {
+  //       return res.status(403).json({ error: "Only admin can delete achievements." });
+  //     }
+  
+  //     // Proceed with deletion if the email is 'admin@gmail.com'
+  //     const deleteSql = "DELETE FROM achievements WHERE id = ?";
+      
+  //     con.query(deleteSql, [id], (deleteErr, deleteResult) => {
+  //       if (deleteErr) {
+  //         console.error("Error deleting achievement:", deleteErr);
+  //         return res.status(500).json({ error: "Database error", details: deleteErr.message });
+  //       }
+  
+  //       if (deleteResult.affectedRows === 0) {
+  //         return res.status(404).json({ error: "Achievement not found" });
+  //       }
+  
+  //       res.json({ success: true, message: "Achievement deleted" });
+  //     });
+  //   });
+  // });
 
+  // router.delete("/achievements/:id", (req, res) => {
+  //   const { id } = req.params;
+  
+  //   // Assuming that the logged-in user's ID is stored in req.user.id after authentication
+  //   const userId = req.user.id;
+  
+  //   // Query to get the email from users table
+  //   const getEmailSql = "SELECT email FROM users WHERE id = ?";
+    
+  //   con.query(getEmailSql, [userId], (err, result) => {
+  //     if (err) {
+  //       console.error("Error fetching user email:", err);
+  //       return res.status(500).json({ error: "Database error", details: err.message });
+  //     }
+  
+  //     if (result.length === 0) {
+  //       return res.status(404).json({ error: "User not found" });
+  //     }
+  
+  //     const email = result[0].email;
+  
+  //     // Log the email for debugging
+  //     console.log("User email fetched:", email);
+  
+  //     // Check if the email is admin@gmail.com
+  //     if (email !== "admin@gmail.com") {
+  //       console.log("Unauthorized attempt to delete by email:", email); // Debug log
+  //       return res.status(403).json({ error: "Only admin can delete achievements." });
+  //     }
+  
+  //     // If the email is admin, proceed with deleting the achievement
+  //     const deleteSql = "DELETE FROM achievements WHERE id = ?";
+  
+  //     con.query(deleteSql, [id], (deleteErr, deleteResult) => {
+  //       if (deleteErr) {
+  //         console.error("Error deleting achievement:", deleteErr);
+  //         return res.status(500).json({ error: "Database error", details: deleteErr.message });
+  //       }
+  
+  //       if (deleteResult.affectedRows === 0) {
+  //         return res.status(404).json({ error: "Achievement not found" });
+  //       }
+  
+  //       res.json({ success: true, message: "Achievement deleted" });
+  //     });
+  //   });
+  // });
+  //above is new
+  
+  // router.delete("/achievements/:id", authenticateUser, (req, res) => {
+  //   const { id } = req.params;
+  
+  //   // Get the email from the user object attached by authenticateUser middleware
+  //   const email = req.user.email;
+  
+  //   // Check if the email matches the hardcoded admin email
+  //   if (email !== adminEmail) {
+  //     return res.status(403).json({ error: "Forbidden - Admin access required" });
+  //   }
+  
+  //   // SQL query to delete the achievement
+  //   const sql = "DELETE FROM achievements WHERE id = ?";
+    
+  //   con.query(sql, [id], (err, result) => {
+  //     if (err) {
+  //       console.error("Error deleting achievement:", err);
+  //       return res.status(500).json({ error: "Database error", details: err.message });
+  //     }
+  
+  //     if (result.affectedRows === 0) {
+  //       return res.status(404).json({ error: "Achievement not found" });
+  //     }
+  
+  //     res.json({ success: true, message: "Achievement deleted" });
+  //   });
+  // });
+
+
+//   router.delete("/achievements/:id", ensureAuthenticated, ensureAdmin, (req, res) => {
+//     const { id } = req.params;
+//   //   const sql = "DELETE FROM achievements WHERE id = ?";
+//   //   // console.log(req.user);  // Check user object to verify role
+
+//   //   con.query(sql, [id], (err, result) => {
+//   //     if (err) {
+//   //       //console.log(req.user);  // Check user object to verify role
+//   //       console.error("Error deleting achievement:", err);
+//   //       return res.status(500).json({ error: "Database error", details: err.message });
+//   //     }
+//   //     if (result.affectedRows === 0) {
+//   //       return res.status(404).json({ error: "Achievement not found" });
+//   //     }
+//   //     res.json({ success: true, message: "Achievement deleted" });
+//   //   });
+//   // });
+//   const sql = "DELETE FROM achievements WHERE id = ?";
+// console.log(`Deleting achievement with ID: ${id}`);
+
+// con.query(sql, [id], (err, result) => {
+//   if (err) {
+//     console.error("Error deleting achievement:", err);
+//     return res.status(500).json({ error: "Database error", details: err.message });
+//   }
+
+//   if (result.affectedRows === 0) {
+//     return res.status(404).json({ error: "Achievement not found" });
+//   }
+
+//   res.json({ success: true, message: "Achievement deleted" });
+// });
+//   });
+  
+//   // Add a new achievement (admin only)
+//   router.post("/achievements", (req, res) => {
+//     const { alumnus_id, title, description, date_achieved } = req.body;
+//     if (!alumnus_id || !title) {
+//       return res.status(400).json({ error: "alumnus_id and title are required" });
+//     }
+  
+//     const sql = "INSERT INTO achievements (alumnus_id, title, description, date_achieved) VALUES (?, ?, ?, ?)";
+//     con.query(sql, [alumnus_id, title, description, date_achieved || null], (err, result) => {
+//       if (err) {
+//         console.error("Error adding achievement:", err);
+//         return res.status(500).json({ error: "Database error", details: err.message });
+//       }
+//       res.json({ success: true, message: "Achievement added", id: result.insertId });
+//     });
+//   });
+  
+//   // Optional: Delete an achievement (admin only)
+//   router.delete("/achievements/:id", (req, res) => {
+//     const { id } = req.params;
+//     const sql = "DELETE FROM achievements WHERE id = ?";
+//     con.query(sql, [id], (err, result) => {
+//       if (err) {
+//         console.error("Error deleting achievement:", err);
+//         return res.status(500).json({ error: "Database error", details: err.message });
+//       }
+//       if (result.affectedRows === 0) {
+//         return res.status(404).json({ error: "Achievement not found" });
+//       }
+//       res.json({ success: true, message: "Achievement deleted" });
+//     });
+//   });
 
 router.get('/jobs', (req, res) => {
     // const sql = `
@@ -866,22 +1058,32 @@ router.delete('/gallery/:id', (req, res) => {
 router.post('/gallery', galleryUpload.single('image'), (req, res) => {
     try {
         const imagePath = req.file.path;
-        const about = req.body.about;
+        const { about, start_year, end_year } = req.body;
 
-        con.query('INSERT INTO gallery (image_path, about) VALUES (?, ?)', [imagePath, about], (err, result) => {
-            if (err) {
-                console.error('Error inserting into gallery:', err);
-                res.status(500).json({ error: 'An error occurred' });
-                return;
+        con.query(
+            'INSERT INTO gallery (image_path, about, start_year, end_year) VALUES (?, ?, ?, ?)',
+            [imagePath, about, start_year, end_year],
+            (err, result) => {
+                if (err) {
+                    console.error('Error inserting into gallery:', err);
+                    return res.status(500).json({ error: 'An error occurred' });
+                }
+                res.json({
+                    message: 'Image uploaded successfully',
+                    id: result.insertId,
+                    image_path: imagePath,
+                    about,
+                    start_year,
+                    end_year
+                });
             }
-            const insertedId = result.insertId;
-            res.json({ message: 'Image uploaded successfully', id: insertedId, image_path: imagePath, about: about });
-        });
+        );
     } catch (error) {
         console.error('Error uploading image:', error);
         res.status(500).json({ error: 'An error occurred' });
     }
 });
+
 
 router.get("/alumni", (_req, res) => {
   const sql = "SELECT a.*, c.course, a.name as name FROM alumnus_bio a LEFT JOIN courses c ON c.id = a.course_id ORDER BY a.name ASC";
@@ -969,7 +1171,7 @@ router.get("/up_events", (req, res) => {
 });
 
 router.get("/alumni_list", (req, res) => {
-    const sql = "SELECT a.*, c.course, a.name as name FROM alumnus_bio a LEFT JOIN courses c ON c.id = a.course_id ORDER BY a.name ASC";
+    const sql = "SELECT a.*, c.course, a.name as name FROM alumni_accounts a LEFT JOIN courses c ON c.id = a.course_id ORDER BY a.name ASC";
     con.query(sql, (err, result) => {
         if (err) return res.json({ Error: "Query Error" })
         if (result.length > 0) {
@@ -1302,6 +1504,31 @@ router.put("/upaccount", upload.single('image'), async (req, res) => {
 //     }
 // });
 
+router.get("/profile/:user_id", (req, res) => {
+  const { user_id } = req.params;
+  console.log("Requested userId:", user_id); // fixed here
+
+  const sql = `
+    SELECT u.id as user_id, u.name as username, u.email as user_email, 
+           a.id as alumni_id, a.name as alumni_name, a.course_id, a.connected_to, 
+           a.gender, a.batch, a.avatar, c.course
+    FROM users u
+    LEFT JOIN alumni_accounts a ON u.id = a.user_id
+    LEFT JOIN courses c ON c.id = a.course_id
+    WHERE u.id = ?
+  `;
+
+  con.query(sql, [user_id], (err, result) => {
+    if (err) {
+      console.error("Profile fetch error:", err);
+      return res.status(500).json({ error: "Database error" });
+    }
+    if (result.length === 0) {
+      return res.status(404).json({ message: "Profile not found" });
+    }
+    return res.json(result[0]);
+  });
+});
 
 
 

@@ -156,7 +156,9 @@ const AlumniList = () => {
                                             alt={`${a.name}'s avatar`}
                                             style={{
                                             //  
-                                            width: '100%',
+                                            width: '150px',
+                                            margin: '20px auto',   // center horizontally
+        display: 'block',  
     height: 'auto',            // Keeps original image height based on width
     objectFit: 'contain',      // Fit image inside without cropping
     borderRadius: '0.5rem',
@@ -167,20 +169,22 @@ const AlumniList = () => {
                                         //    // console.log('Avatar Path:', a.avatar);
 
                                         />
-                                        <div className="card-body">
+                                        <div className="card-body text-center">
                                             <h5 className="card-title text-center pad-zero">
                                                 {a.name} <small>
                                                     <i className={`badge badge-primary ${a.status === 1 ? '' : 'd-none'}`}>Verified</i>
                                                     <i className={`badge badge-warning ${a.status === 0 ? '' : 'd-none'}`}>Unverified</i>
                                                 </small>
                                             </h5>
-                                            <p className="card-text"><strong>Email:</strong> {a.email}</p>
+                                             {a.batch !== "0000" && (
+                                            <p className="card-text" ><strong>Batch:</strong> {a.batch}</p>
+                                             )}
                                             {a.course && (
                                                 <p className="card-text"><strong>Course:</strong> {a.course}</p>
                                             )}
-                                            {a.batch !== "0000" && (
-                                                <p className="card-text"><strong>Batch:</strong> {a.batch}</p>
-                                            )}
+                                           
+                                                <p className="card-text"><strong>Email:</strong> {a.email}</p>
+                                            
                                             {a.connected_to && (
                                                 <p className="card-text"><strong>Currently working in/as:</strong> {a.connected_to}</p>
                                             )}

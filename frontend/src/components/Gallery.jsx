@@ -1,18 +1,43 @@
 import axios from 'axios';
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState } from 'react';
 import { baseUrl } from '../utils/globalurl';
+import { FaSearch } from 'react-icons/fa';
 
 const Gallery = () => {
-    const [gallery, setGallery] = useState([])
+    const [gallery, setGallery] = useState([]);
+    const [searchYear, setSearchYear] = useState('');
 
     useEffect(() => {
+        fetchGallery();
+    }, []);
+
+    const fetchGallery = () => {
         axios.get(`${baseUrl}auth/gallery`)
             .then((res) => {
-                console.log(res.data);
                 setGallery(res.data);
             })
             .catch((err) => console.log(err));
-    }, []);
+    };
+
+    // Group by batch
+    const groupByBatch = (data) => {
+        return data.reduce((groups, item) => {
+            const batchKey =
+                item.start_year && item.end_year
+                    ? `${item.start_year} - ${item.end_year}`
+                    : '';
+            if (!groups[batchKey]) groups[batchKey] = [];
+            groups[batchKey].push(item);
+            return groups;
+        }, {});
+    };
+
+    // Filter by start year if searchYear is entered
+    const filteredGallery = searchYear
+        ? gallery.filter((g) => g.start_year?.toString().includes(searchYear))
+        : gallery;
+
+    const groupedGallery = groupByBatch(filteredGallery);
 
     return (
         <>
@@ -22,46 +47,61 @@ const Gallery = () => {
                         <div className="col-lg-8 align-self-end mb-4 page-title">
                             <h3 className="text-white">Gallery</h3>
                             <hr className="divider my-4" />
-
-                            <div className="col-md-12 mb-2 justify-content-center">
-                            </div>
                         </div>
-
                     </div>
                 </div>
             </header>
-            <div className="container-fluid mt-3 pt-2">
 
-                <div className="row-items">
-                    <div className="col-lg-12">
-                        <div className="row">
-                            {/* <div className="col-md-6"> */}
-                            {gallery.map((g, index) => (
-                                <div className="col-md-6 padzero" key={index}>
-                                    <div className="card gallery-list"  >
-                                        <div className="">
-                                            <img src={`${baseUrl}${g.image_path}`} className='card-img-top img-fluid galleryimg' alt="img" />
-                                        </div>
-                                        <div className="card-body">
-                                            <div className="row align-items-center justify-content-center text-center h-100">
-                                                <div className="">
-                                                    <div>
-                                                        <span className="truncate" style={{ fontSize: "inherit" }}><small>{g.about}</small></span>
-                                                        <br />
-                                                    </div>
-                                                </div>
+            <div className="container mt-4">
+                {/* Search Bar */}
+                <div className="input-group mb-4" style={{ maxWidth: '300px' }}>
+                    <input
+                        type="text"
+                        className="form-control"
+                        placeholder="Search by start year..."
+                        value={searchYear}
+                        onChange={(e) => setSearchYear(e.target.value)}
+                    />
+                    <button className="btn btn-primary">
+                        <FaSearch />
+                    </button>
+                </div>
+
+                {/* Display grouped by batch with N/A first */}
+                {Object.keys(groupedGallery)
+                    .sort((a, b) => {
+                        if (a === 'N/A') return -1;
+                        if (b === 'N/A') return 1;
+                        return a.localeCompare(b);
+                    })
+                    .map((batchKey) => (
+                        <div key={batchKey} className="mb-5">
+                            <h4 className="mb-3">{`Moments: ${batchKey}`}</h4>
+                            <div className="row">
+                                {groupedGallery[batchKey].map((g, index) => (
+                                    <div className="col-12 col-sm-6 col-lg-4 padzero" key={index}>
+                                        <div className="card gallery-list h-100">
+                                            <img
+                                                src={`${baseUrl}${g.image_path}`}
+                                                className="card-img-top img-fluid galleryimg"
+                                                alt="img"
+                                                style={{
+                                                    height: '250px',
+                                                    objectFit: 'cover'
+                                                }}
+                                            />
+                                            <div className="card-body text-center">
+                                                <small>{g.about}</small>
                                             </div>
                                         </div>
                                     </div>
-                                </div>))}
-                            <br />
-                            {/* </div> */}
+                                ))}
+                            </div>
                         </div>
-                    </div>
-                </div>
+                    ))}
             </div>
         </>
-    )
-}
+    );
+};
 
-export default Gallery
+export default Gallery;
