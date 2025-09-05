@@ -1262,6 +1262,75 @@ router.put("/upaccount", upload.single('image'), async (req, res) => {
   });
 });
 
+router.put("/upaccount", upload.single('image'), async (req, res) => {
+  const {
+    name,
+    connected_to,
+    course_id,
+    email,
+    gender,
+    password,
+    batch,
+    alumnus_id,
+    user_id
+  } = req.body;
+
+  if (!alumnus_id || !user_id || !name || !course_id || !email || !gender || !batch) {
+    return res.status(400).json({ error: "Missing required fields" });
+  }
+
+  const avatar = req.file ? req.file.filename : null;
+
+  const insertSql = `
+    INSERT INTO alumni_accounts 
+    (user_id, name, connected_to, course_id, email, gender, batch, avatar)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    ON DUPLICATE KEY UPDATE
+      name = VALUES(name),
+      connected_to = VALUES(connected_to),
+      course_id = VALUES(course_id),
+      email = VALUES(email),
+      gender = VALUES(gender),
+      batch = VALUES(batch),
+      avatar = VALUES(avatar)
+  `;
+  const insertValues = [user_id, name, connected_to, course_id, email, gender, batch, avatar];
+
+  con.query(insertSql, insertValues, (err) => {
+    if (err) {
+      console.error("Error upserting into alumni_accounts:", err);
+      return res.status(500).json({ error: "Failed to update alumni account" });
+    }
+
+    // Update users table
+    const updateUserSql = 'UPDATE users SET name = ?, email = ? WHERE id = ?';
+    con.query(updateUserSql, [name, email, user_id], async (err) => {
+      if (err) {
+        console.error("Error updating users table:", err);
+        return res.status(500).json({ error: "Failed to update user table" });
+      }
+
+      if (password && password.trim() !== "") {
+        try {
+          const hashedPassword = await bcrypt.hash(password, 10);
+          const updatePassSql = 'UPDATE users SET password = ? WHERE id = ?';
+          con.query(updatePassSql, [hashedPassword, user_id], (err) => {
+            if (err) {
+              console.error("Error updating password:", err);
+              return res.status(500).json({ error: "Failed to update password" });
+            }
+            return res.json({ message: "Account updated successfully" });
+          });
+        } catch (err) {
+          console.error("Password hashing failed:", err);
+          return res.status(500).json({ error: "Password hashing failed" });
+        }
+      } else {
+        return res.json({ message: "Account updated successfully" });
+      }
+    });
+  });
+});
 
 
 

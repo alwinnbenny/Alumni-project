@@ -5,7 +5,7 @@ import { BsThreeDotsVertical } from "react-icons/bs";
 import { FaSearch,FaGlobe } from "react-icons/fa";
 import { FaBars } from "react-icons/fa";
 import { Link, useNavigate } from 'react-router-dom';
-import logo from "../assets/uploads/logo.png";
+import logo from "../assets/uploads/favicon.ico";
 import { useAuth } from '../AuthContext';
 import axios from 'axios';
 import { baseUrl } from '../utils/globalurl';

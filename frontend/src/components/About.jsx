@@ -1,6 +1,6 @@
 import axios from 'axios';
 import React, { useEffect, useState } from 'react';
-import logo from "../assets/uploads/logo.png"
+import logo from "../assets/uploads/favicon.ico"
 import { baseUrl } from '../utils/globalurl';
 
 const About = () => {

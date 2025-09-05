@@ -427,7 +427,7 @@ const Achievements = () => {
     <>
       <ToastContainer position="top-center" />
       <div className="container mt-4">
-        <h2 className="mb-4">Achievements</h2>
+        <h2 className="text-center mt-5 mb-4">Achievements</h2>
 
         {/* Add Achievement Form */}
         <div className="card mb-4">

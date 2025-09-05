@@ -2,7 +2,7 @@ import React, { useEffect, useState, useRef } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { FaAngleDown, FaCog, FaPowerOff, FaBars } from 'react-icons/fa';
 import { MdDashboard } from "react-icons/md";
-import logo from "../assets/uploads/logo.png";
+import logo from "../assets/uploads/favicon.ico";
 import { useAuth } from '../AuthContext';
 import { useTheme } from '../ThemeContext';
 import axios from 'axios';
@@ -47,7 +47,7 @@ const Header = () => {
     <>
       <nav className={`navbar navbar-expand-lg navbar-${theme} fixed-top`} id="mainNav">
         <div className="container">
-          <Link className="navbar-brand js-scroll-trigger" to="/">
+          <Link className="navbar-brand js-scroll-trigger ms-n3" to="/">
             <img src={logo} className='logoimg' alt="Logo" />
           </Link>
           <button className="navbar-toggler navbar-light" type="button">
