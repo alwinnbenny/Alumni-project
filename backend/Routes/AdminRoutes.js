@@ -342,211 +342,14 @@ function ensureAuthenticated(req, res, next) {
     }
   };
   
-  // Route to delete achievement
-  // router.delete("/achievements/:id", (req, res) => {
-  //   const { id } = req.params;
-  
-  //   // Query to get the email from alumnus_bio using the foreign key relationship
-  //   const sql = `
-  //     SELECT ab.email
-  //     FROM achievements a
-  //     JOIN alumnus_bio ab ON a.alumnus_id = ab.id
-  //     WHERE a.id = ?
-  //   `;
-  
-  //   con.query(sql, [id], (err, result) => {
-  //     if (err) {
-  //       console.error("Error fetching email:", err);
-  //       return res.status(500).json({ error: "Database error", details: err.message });
-  //     }
-  
-  //     if (result.length === 0) {
-  //       return res.status(404).json({ error: "Achievement not found" });
-  //     }
-  
-  //     // Retrieve email from the result
-  //     const email = result[0].email;
-  
-  //     // Check if the email is admin@gmail.com
-  //     if (email !== "admin@gmail.com") {
-  //       return res.status(403).json({ error: "Only admin can delete achievements." });
-  //     }
-  
-  //     // Proceed with deletion if the email is 'admin@gmail.com'
-  //     const deleteSql = "DELETE FROM achievements WHERE id = ?";
-      
-  //     con.query(deleteSql, [id], (deleteErr, deleteResult) => {
-  //       if (deleteErr) {
-  //         console.error("Error deleting achievement:", deleteErr);
-  //         return res.status(500).json({ error: "Database error", details: deleteErr.message });
-  //       }
-  
-  //       if (deleteResult.affectedRows === 0) {
-  //         return res.status(404).json({ error: "Achievement not found" });
-  //       }
-  
-  //       res.json({ success: true, message: "Achievement deleted" });
-  //     });
-  //   });
-  // });
-
-  // router.delete("/achievements/:id", (req, res) => {
-  //   const { id } = req.params;
-  
-  //   // Assuming that the logged-in user's ID is stored in req.user.id after authentication
-  //   const userId = req.user.id;
-  
-  //   // Query to get the email from users table
-  //   const getEmailSql = "SELECT email FROM users WHERE id = ?";
-    
-  //   con.query(getEmailSql, [userId], (err, result) => {
-  //     if (err) {
-  //       console.error("Error fetching user email:", err);
-  //       return res.status(500).json({ error: "Database error", details: err.message });
-  //     }
-  
-  //     if (result.length === 0) {
-  //       return res.status(404).json({ error: "User not found" });
-  //     }
-  
-  //     const email = result[0].email;
-  
-  //     // Log the email for debugging
-  //     console.log("User email fetched:", email);
-  
-  //     // Check if the email is admin@gmail.com
-  //     if (email !== "admin@gmail.com") {
-  //       console.log("Unauthorized attempt to delete by email:", email); // Debug log
-  //       return res.status(403).json({ error: "Only admin can delete achievements." });
-  //     }
-  
-  //     // If the email is admin, proceed with deleting the achievement
-  //     const deleteSql = "DELETE FROM achievements WHERE id = ?";
-  
-  //     con.query(deleteSql, [id], (deleteErr, deleteResult) => {
-  //       if (deleteErr) {
-  //         console.error("Error deleting achievement:", deleteErr);
-  //         return res.status(500).json({ error: "Database error", details: deleteErr.message });
-  //       }
-  
-  //       if (deleteResult.affectedRows === 0) {
-  //         return res.status(404).json({ error: "Achievement not found" });
-  //       }
-  
-  //       res.json({ success: true, message: "Achievement deleted" });
-  //     });
-  //   });
-  // });
-  //above is new
-  
-  // router.delete("/achievements/:id", authenticateUser, (req, res) => {
-  //   const { id } = req.params;
-  
-  //   // Get the email from the user object attached by authenticateUser middleware
-  //   const email = req.user.email;
-  
-  //   // Check if the email matches the hardcoded admin email
-  //   if (email !== adminEmail) {
-  //     return res.status(403).json({ error: "Forbidden - Admin access required" });
-  //   }
-  
-  //   // SQL query to delete the achievement
-  //   const sql = "DELETE FROM achievements WHERE id = ?";
-    
-  //   con.query(sql, [id], (err, result) => {
-  //     if (err) {
-  //       console.error("Error deleting achievement:", err);
-  //       return res.status(500).json({ error: "Database error", details: err.message });
-  //     }
-  
-  //     if (result.affectedRows === 0) {
-  //       return res.status(404).json({ error: "Achievement not found" });
-  //     }
-  
-  //     res.json({ success: true, message: "Achievement deleted" });
-  //   });
-  // });
-
-
-//   router.delete("/achievements/:id", ensureAuthenticated, ensureAdmin, (req, res) => {
-//     const { id } = req.params;
-//   //   const sql = "DELETE FROM achievements WHERE id = ?";
-//   //   // console.log(req.user);  // Check user object to verify role
-
-//   //   con.query(sql, [id], (err, result) => {
-//   //     if (err) {
-//   //       //console.log(req.user);  // Check user object to verify role
-//   //       console.error("Error deleting achievement:", err);
-//   //       return res.status(500).json({ error: "Database error", details: err.message });
-//   //     }
-//   //     if (result.affectedRows === 0) {
-//   //       return res.status(404).json({ error: "Achievement not found" });
-//   //     }
-//   //     res.json({ success: true, message: "Achievement deleted" });
-//   //   });
-//   // });
-//   const sql = "DELETE FROM achievements WHERE id = ?";
-// console.log(`Deleting achievement with ID: ${id}`);
-
-// con.query(sql, [id], (err, result) => {
-//   if (err) {
-//     console.error("Error deleting achievement:", err);
-//     return res.status(500).json({ error: "Database error", details: err.message });
-//   }
-
-//   if (result.affectedRows === 0) {
-//     return res.status(404).json({ error: "Achievement not found" });
-//   }
-
-//   res.json({ success: true, message: "Achievement deleted" });
-// });
-//   });
-  
-//   // Add a new achievement (admin only)
-//   router.post("/achievements", (req, res) => {
-//     const { alumnus_id, title, description, date_achieved } = req.body;
-//     if (!alumnus_id || !title) {
-//       return res.status(400).json({ error: "alumnus_id and title are required" });
-//     }
-  
-//     const sql = "INSERT INTO achievements (alumnus_id, title, description, date_achieved) VALUES (?, ?, ?, ?)";
-//     con.query(sql, [alumnus_id, title, description, date_achieved || null], (err, result) => {
-//       if (err) {
-//         console.error("Error adding achievement:", err);
-//         return res.status(500).json({ error: "Database error", details: err.message });
-//       }
-//       res.json({ success: true, message: "Achievement added", id: result.insertId });
-//     });
-//   });
-  
-//   // Optional: Delete an achievement (admin only)
-//   router.delete("/achievements/:id", (req, res) => {
-//     const { id } = req.params;
-//     const sql = "DELETE FROM achievements WHERE id = ?";
-//     con.query(sql, [id], (err, result) => {
-//       if (err) {
-//         console.error("Error deleting achievement:", err);
-//         return res.status(500).json({ error: "Database error", details: err.message });
-//       }
-//       if (result.affectedRows === 0) {
-//         return res.status(404).json({ error: "Achievement not found" });
-//       }
-//       res.json({ success: true, message: "Achievement deleted" });
-//     });
-//   });
+ 
 
 router.get('/jobs', (req, res) => {
-    // const sql = `
-    //     SELECT c.*, u.name
-    //     FROM careers c
-    //     INNER JOIN users u ON u.id = c.user_id
-    //     ORDER BY c.id DESC
-    // `;
     const sql = `
-    SELECT careers.*, users.name
-    FROM careers
-    INNER JOIN users ON careers.user_id = users.id
-    ORDER BY careers.id DESC       
+        SELECT careers.*, users.name
+        FROM careers
+        INNER JOIN users ON careers.user_id = users.id
+        ORDER BY careers.id DESC
     `;
 
     con.query(sql, (err, result) => {
@@ -554,41 +357,72 @@ router.get('/jobs', (req, res) => {
             console.error('Error executing SQL query:', err);
             return res.status(500).json({ error: 'Query Error' });
         }
-        // Send the fetched job data to the client
-        res.json(result);
+
+        // Add remaining time in hours/minutes for each job
+        const jobsWithRemaining = result.map(job => {
+            if (!job.deadline) {
+                job.remaining_time = 'No deadline';
+                return job;
+            }
+            const deadline = new Date(job.deadline);
+            const now = new Date();
+            const diffMs = deadline - now;
+
+            if (diffMs <= 0) {
+                job.remaining_time = 'Expired';
+            } else {
+                const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+                const diffMinutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+                job.remaining_time = `${diffHours} hour(s) ${diffMinutes} minute(s) left`;
+            }
+            return job;
+        });
+
+        res.json(jobsWithRemaining);
     });
 });
 
-
-// router.post('/managejob', (req, res) => {
-//     const { company, job_title, location, description, user_id } = req.body;
-
-//     const sql = 'INSERT INTO careers (company, job_title, location, description,user_id) VALUES (?, ?, ?, ?,?)';
-//     con.query(sql, [company, job_title, location, description, user_id], (err, result) => {
-//         if (err) {
-//             console.error('Error executing SQL query:', err);
-//             return res.status(500).json({ error: 'Database Error' });
-//         }
-//         return res.json({ message: 'New job added successfully', jobId: result.insertId });
-//     });
-// });
-
-
 router.put('/managejob', (req, res) => {
-    const { id, company, job_title, location, description } = req.body;
-
-    if (id) {
-        const sql = 'UPDATE careers SET company=?, job_title=?, location=?, description=? WHERE id=?';
-        con.query(sql, [company, job_title, location, description, id], (err, result) => {
-            if (err) {
-                console.error('Error executing SQL query:', err);
-                return res.status(500).json({ error: 'Database Error' });
-            }
-            return res.json({ message: 'Job updated successfully' });
-        });
-    } else {
-        return res.status(400).json({ error: 'Invalid Request: No ID provided for update' });
+  const { id, company, job_title, location, description, user_id, deadline } = req.body;
+  if (!id) {
+    return res.status(400).json({ error: 'Job ID is required for update' });
+  }
+  const sql = 'UPDATE careers SET company=?, job_title=?, location=?, description=?, user_id=?, deadline=? WHERE id=?';
+  con.query(sql, [company, job_title, location, description, user_id, deadline, id], (err, result) => {
+    if (err) {
+      console.error('Error updating job:', err);
+      return res.status(500).json({ error: 'Database Error' });
     }
+    return res.json({ message: 'Job updated successfully' });
+  });
+});
+router.post('/managejob', (req, res) => {
+  const { company, job_title, location, description, user_id, deadline } = req.body;
+  const sql = 'INSERT INTO careers (company, job_title, location, description, user_id, deadline) VALUES (?, ?, ?, ?, ?, ?)';
+
+  con.query(sql, [company, job_title, location, description, user_id, deadline], async (err, result) => {
+    if (err) {
+      console.error('Error executing SQL query:', err);
+      return res.status(500).json({ error: 'Database Error' });
+    }
+  
+    try {
+      const emails = await getAllStudentEmails();
+      const subject = `New Job Posted: ${job_title}`;
+      const html = `A new job has been posted:<br><br>Company: ${company}<br>Title: ${job_title}<br>Location: ${location}<br>Description: ${description}<br>Deadline: ${deadline ? deadline : 'Not specified'}`;
+  
+      await Promise.all(emails.map(email => sendEmail(email, subject, html)));
+  
+      return res.json({ message: 'New job added successfully and emails sent', jobId: result.insertId });
+    } catch (error) {
+      console.error('Error fetching emails or sending email:', error);
+      if (error.code === 'ENOTFOUND' || error.code === 'EAI_AGAIN') {
+        return res.status(500).json({ error: 'Network Error: Unable to send emails' });
+      } else {
+        return res.status(500).json({ error: 'Error sending emails' });
+      }
+    }
+  });
 });
 
 // Forgot Password Route
@@ -1403,7 +1237,7 @@ router.put("/upaccount", upload.single('image'), async (req, res) => {
 //               con.query(passSql, [hashedPassword, user_id], (err) => {
 //                 if (err) {
 //                   console.error('Error updating password:', err);
-//                   return res.status(500).json({ error: 'Failed to update password' });
+//                   return res.status(500).json({ error: 'An error occurred' });
 //                 }
 //         if (password && password.trim() !== '') {
 //             // New password provided — hash and update
@@ -1431,82 +1265,6 @@ router.put("/upaccount", upload.single('image'), async (req, res) => {
 //     } catch (error) {
 //       console.error('Error updating account:', error);
 //       res.status(500).json({ error: 'An error occurred' });
-//     }
-//   });
-  
-//new code 
-
-
-
-
-
-
-
-
-// router.put("/upaccount", (req, res) => {
-//     const {
-//       id,
-//       user_id,
-//       name,
-//       connected_to,
-//       course_id,
-//       email,
-//       gender,
-//       batch,
-//       avatar // optional
-//     } = req.body;
-  
-//     if (!id || !user_id || !name || !course_id || !email || !gender || !batch) {
-//       return res.status(400).json({ error: "Missing required fields" });
-//     }
-  
-//     const sql = `
-//       UPDATE alumni_accounts 
-//       SET user_id = ?, name = ?, connected_to = ?, course_id = ?, email = ?, gender = ?, batch = ?, avatar = ? 
-//       WHERE id = ?
-//     `;
-  
-//     const values = [user_id, name, connected_to, course_id, email, gender, batch, avatar, id];
-  
-//     db.query(sql, values, (err, result) => {
-//       if (err) {
-//         console.error("Error updating account:", err);
-//         return res.status(500).json({ error: "Internal server error" });
-//       }
-//       res.json({ message: "Account updated successfully" });
-//     });
-//   });
-
-  
-//             // Update users table
-//             const usql = 'UPDATE users SET name = ?, email = ? WHERE id = ?';
-//             const uvalues = [name, email, user_id];
-//             con.query(usql, uvalues, (err, result) => {
-//                 if (err) {
-//                     console.error('Error updating users:', err);
-//                     res.status(500).json({ error: 'An error occurred' });
-//                     return;
-//                 }
-//                 // Update password in users table
-//                 if (hashedPassword) {
-//                     const psql = 'UPDATE users SET password = ? WHERE id = ?';
-//                     const pvalues = [hashedPassword, user_id];
-//                     con.query(psql, pvalues, (err, result) => {
-//                         if (err) {
-//                             console.error('Error updating password:', err);
-//                             res.status(500).json({ error: 'An error occurred' });
-//                             return;
-//                         }
-//                         res.json({ message: 'Account updated successfully' });
-//                     });
-//                 } else {
-//                     res.json({ message: 'Account updated successfully' });
-//                 }
-//             });
-        
-//      catch (error) {
-//         console.error('Error updating account:', error);
-//         res.status(500).json({ error: 'An error occurred' });
 //     }
 // });
 
@@ -1639,10 +1397,10 @@ router.get("/alumnusdetails", (req, res) => {
   });
   
   router.post('/managejob', async (req, res) => {
-    const { company, job_title, location, description, user_id } = req.body;
-    const sql = 'INSERT INTO careers (company, job_title, location, description, user_id) VALUES (?, ?, ?, ?, ?)';
-  
-    con.query(sql, [company, job_title, location, description, user_id], async (err, result) => {
+    const { company, job_title, location, description, user_id, deadline } = req.body;
+    const sql = 'INSERT INTO careers (company, job_title, location, description, user_id, deadline) VALUES (?, ?, ?, ?, ?, ?)';
+
+    con.query(sql, [company, job_title, location, description, user_id, deadline], async (err, result) => {
       if (err) {
         console.error('Error executing SQL query:', err);
         return res.status(500).json({ error: 'Database Error' });
@@ -1651,7 +1409,7 @@ router.get("/alumnusdetails", (req, res) => {
       try {
         const emails = await getAllStudentEmails();
         const subject = `New Job Posted: ${job_title}`;
-        const html = `A new job has been posted:<br><br>Company: ${company}<br>Title: ${job_title}<br>Location: ${location}<br>Description: ${description}`;
+        const html = `A new job has been posted:<br><br>Company: ${company}<br>Title: ${job_title}<br>Location: ${location}<br>Description: ${description}<br>Deadline: ${deadline ? deadline : 'Not specified'}`;
   
         await Promise.all(emails.map(email => sendEmail(email, subject, html)));
   

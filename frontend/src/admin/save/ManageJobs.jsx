@@ -1,5 +1,3 @@
-
-
 import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import { useLocation, useNavigate } from 'react-router-dom';
@@ -18,6 +16,7 @@ const ManageJobs = ({ setHandleAdd }) => {
     job_title: '',
     location: '',
     description: '',
+    deadline: '',
     user_id: uid,
   });
   const [loading, setLoading] = useState(false);
@@ -61,10 +60,10 @@ const ManageJobs = ({ setHandleAdd }) => {
         job_title: "",
         location: "",
         description: "",
+        deadline: "",
         user_id: uid,
       });
 
-      // Display success message after job posting
       toast.success('Job posted successfully!', {
         position: "top-center",
         autoClose: 3000,
@@ -73,7 +72,6 @@ const ManageJobs = ({ setHandleAdd }) => {
       });
     } catch (error) {
       console.error('Error:', error);
-      // You can show a generic success message or handle this differently if required
       toast.error('An error occurred while posting the job.', {
         position: "top-center",
         autoClose: 3000,
@@ -81,7 +79,7 @@ const ManageJobs = ({ setHandleAdd }) => {
         transition: Bounce,
       });
     } finally {
-      setLoading(false);  // Hide loader
+      setLoading(false);
     }
   };
 
@@ -122,6 +120,19 @@ const ManageJobs = ({ setHandleAdd }) => {
               <ReactQuill
                 value={formData.description}
                 onChange={handleChangeDesc}
+                required
+              />
+            </div>
+          </div>
+          <div className="row form-group">
+            <div className="col-md-8">
+              <label className="control-label">Application Deadline</label>
+              <input
+                type="date"
+                name="deadline"
+                className="form-control"
+                value={formData.deadline}
+                onChange={handleChange}
                 required
               />
             </div>
