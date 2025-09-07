@@ -2,8 +2,7 @@ import axios from 'axios';
 import React, { useEffect, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom';
 import { ToastContainer, toast } from 'react-toastify';
-import { baseUrl } from '../../utils/globalurl';
-// import { baseUrl } from '../../utils/globalurl';
+import { baseUrl } from '../../utils/globalurl';;
 import "./ViewAlumni.css";
 
 
@@ -48,9 +47,9 @@ const ViewAlumni = () => {
                 <div className="col-lg-12">
                     <div>
                         <center>
-                            <div className="avatar">
-                                <img src={`${baseUrl}${alumni.avatar}`}  alt="avatar" />
-                            </div>
+                           { <div className="avatar">
+                                <img src={alumni.avatar ? `${baseUrl}${alumni.avatar}` : `${baseUrl}avatar/default-avatar.jpg`}  alt="avatar" />
+                            </div>}
                         </center>
                     </div>
                     <hr />

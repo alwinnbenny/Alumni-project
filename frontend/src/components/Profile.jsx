@@ -71,7 +71,7 @@ const Profile = () => {
             src={
               profile.avatar
                 ? `${baseUrl}avatar/${profile.avatar}`
-                : "/default-avatar.png"
+                : "/default-avatar.jpg"
             }
             alt="Avatar"
             className="avatar"

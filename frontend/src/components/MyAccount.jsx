@@ -175,7 +175,7 @@ const MyAccount = () => {
                                 <div className="form-group row">
                                     <label className="col-sm-2 col-form-label">Phone Number</label>
                                     <div className="col-sm-10">
-                                        <input onChange={handleChange} type="text" className="form-control" name="phone" placeholder="Enter phone number (Enter dummy number like 123 to stay private )" value={acc.phone || ""} />
+                                        <input onChange={handleChange} type="text" className="form-control" name="phone" placeholder="Enter phone number" value={acc.phone || ""} />
                                     </div>
                                 </div>
 

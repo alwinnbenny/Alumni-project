@@ -186,8 +186,8 @@ router.post("/google-signin", async (req, res) => {
         } else {
           const verificationToken = Math.random().toString(36).substr(2) + Date.now().toString(36);
           const alumnusSql =
-            "INSERT INTO alumnus_bio (name, email, verification_token) VALUES (?, ?, ?)";
-          con.query(alumnusSql, [name, email, verificationToken], (alumnusErr, alumnusResult) => {
+            "INSERT INTO alumnus_bio (name, email) VALUES (?, ?)";
+          con.query(alumnusSql, [name, email], (alumnusErr, alumnusResult) => {
             if (alumnusErr) {
               console.error("Alumnus insert error:", alumnusErr);
               return res.status(500).json({ error: "Alumnus insert error", details: alumnusErr.message });
@@ -195,8 +195,8 @@ router.post("/google-signin", async (req, res) => {
   
             const alumnusId = alumnusResult.insertId;
             const userSql =
-              "INSERT INTO users (name, email, type, alumnus_id) VALUES (?, ?, ?, ?)";
-            con.query(userSql, [name, email, "alumnus", alumnusId], async (userErr, userResult) => {
+              "INSERT INTO users (name, email, type, alumnus_id, verification_token) VALUES (?, ?, ?, ?, ?)";
+            con.query(userSql, [name, email, "alumnus", alumnusId, verificationToken], async (userErr, userResult) => {
               if (userErr) {
                 console.error("User insert error:", userErr);
                 return res.status(500).json({ error: "User insert error", details: userErr.message });
@@ -295,7 +295,7 @@ function ensureAuthenticated(req, res, next) {
     // //   ORDER BY a.created_at DESC
     // // `;
     //const sql = `
-  //   SELECT a.id, a.title, a.description, a.date_achieved, a.created_at, a.category, a.attachment,
+  //   SELECT a.id, a.title, a.description, a.date_achieved, a.category, a.attachment,
   //          u.id AS user_id, u.name AS user_name, u.email AS user_email
   //   FROM achievements a
   //   JOIN users u ON a.alumnus_id = u.id

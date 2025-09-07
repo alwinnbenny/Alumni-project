@@ -66,7 +66,7 @@ const Home = () => {
                 <div className="container h-100">
                     <div className="row h-100 align-items-center justify-content-center">
                         <div className="col-lg-8  text-center">
-                            <h1 className="text-white font-weight-bold display-3 mb-4">Welcome to CEP ALUMNI</h1>
+                            <h1 className="text-white font-weight-bold display-3 mb-4">MEETING THE MOMENT,TOGETHER</h1>
                             <p className="text-white-75 font-weight-light lead mb-5">Connecting Computer Science Alumni Across The Globe</p>
                             {isLoggedIn && !isAdmin && <Link className="btn btn-info  ms-2   btn-xl" to="account">Manage Profile</Link>}
                            
