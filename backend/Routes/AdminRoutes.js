@@ -229,13 +229,13 @@ router.post("/google-signin", async (req, res) => {
   router.get("/verify", (req, res) => {
     const { token } = req.query;
   
-    const verifyQuery = "SELECT * FROM alumnus_bio WHERE verification_token = ?";
+    const verifyQuery = "SELECT * FROM users WHERE verification_token = ?";
     con.query(verifyQuery, [token], (err, result) => {
       if (err) return res.status(500).json({ error: "Query Error" });
       if (result.length === 0) return res.status(400).send("Invalid or expired token");
   
       const updateQuery =
-        "UPDATE alumnus_bio SET status = 1, verification_token = NULL WHERE verification_token = ?";
+        "UPDATE users SET status = 1, verification_token = NULL WHERE verification_token = ?";
       con.query(updateQuery, [token], (updateErr) => {
         if (updateErr) return res.status(500).json({ error: "Update Error" });
         res.send("Email verified successfully! You can now log in.");
@@ -250,7 +250,7 @@ router.get("/counts", (req, res) => {
             (SELECT COUNT(*) FROM careers) AS jobCount,
             (SELECT COUNT(*) FROM events) AS eventCount,
             (SELECT COUNT(*) FROM events WHERE schedule >= CURDATE()) AS upeventCount,
-            (SELECT COUNT(*) FROM alumnus_bio) AS alumniCount;
+            (SELECT COUNT(*) FROM alumni_accounts) AS alumniCount;
     `;
 
     con.query(sql, (err, result) => {
@@ -288,12 +288,29 @@ function ensureAuthenticated(req, res, next) {
     next();
   }
   router.get("/achievements", (req, res) => {
-    const sql = `
-      SELECT a.id, a.title, a.description, a.date_achieved, a.created_at, a.category, a.attachment, ab.name, ab.email
-      FROM achievements a
-      JOIN alumnus_bio ab ON a.alumnus_id = ab.id
-      ORDER BY a.created_at DESC
-    `;
+    // const sql = `
+    // //   SELECT a.id, a.title, a.description, a.date_achieved, a.created_at, a.category, a.attachment, ab.name, ab.email
+    // //   FROM achievements a
+    // //   JOIN alumnus_bio ab ON a.alumnus_id = ab.id
+    // //   ORDER BY a.created_at DESC
+    // // `;
+    //const sql = `
+  //   SELECT a.id, a.title, a.description, a.date_achieved, a.created_at, a.category, a.attachment,
+  //          u.id AS user_id, u.name AS user_name, u.email AS user_email
+  //   FROM achievements a
+  //   JOIN users u ON a.alumnus_id = u.id
+  //   ORDER BY a.created_at DESC
+  // `;
+ const sql = `
+    SELECT ach.id, ach.title, ach.description, ach.date_achieved, ach.category, ach.attachment,
+           u.name, u.email, ach.created_at
+    FROM achievements ach
+    JOIN users u ON ach.alumnus_id = u.id
+    ORDER BY ach.created_at DESC
+  `;
+
+
+
     con.query(sql, (err, result) => {
       if (err) {
         console.error("Error fetching achievements:", err);
@@ -302,27 +319,56 @@ function ensureAuthenticated(req, res, next) {
       res.json(result);
     });
   });
-  
-  router.post("/achievements", galleryUpload.single('attachment'), (req, res) => {
-    const { alumnus_id, title, description, date_achieved, category } = req.body;
+  router.post("/achievements", galleryUpload.single("attachment"), (req, res) => {
+     console.log("Body:", req.body);
+  console.log("File:", req.file);
+  const alumnusId = parseInt(req.body.alumnus_id, 10);
+
+  // Check if this alumnus exists
+  const checkSql = "SELECT id FROM users WHERE id = ?";
+  con.query(checkSql, [alumnusId], (err, result) => {
+    if (err) return res.status(500).json({ error: "Database error" });
+    if (result.length === 0) return res.status(400).json({ error: "Invalid alumnus_id" });
+
+    // Insert into achievements
+    const { title, description, date_achieved, category } = req.body;
     const attachment = req.file ? req.file.filename : null;
-  
-    if (!alumnus_id || !title) {
-      return res.status(400).json({ error: "alumnus_id and title are required" });
-    }
-  
-    const sql = `
-      INSERT INTO achievements (alumnus_id, title, description, date_achieved,category,attachment)
-      VALUES (?, ?, ?, ?,?,?)
+    const insertSql = `
+      INSERT INTO achievements (alumnus_id, title, description, date_achieved, category, attachment)
+      VALUES (?, ?, ?, ?, ?, ?)
     `;
-    con.query(sql, [alumnus_id, title, description, date_achieved || null,category || null,attachment], (err, result) => {
-      if (err) {
-        console.error("Error adding achievement:", err);
-        return res.status(500).json({ error: "Database error", details: err.message });
+    con.query(
+      insertSql,
+      [alumnusId, title, description, date_achieved || null, category || null, attachment],
+      (err2, result2) => {
+        if (err2) return res.status(500).json({ error: "Failed to insert achievement" });
+        res.json({ success: true, message: "Achievement added", id: result2.insertId });
       }
-      res.json({ success: true, message: "Achievement added", id: result.insertId });
-    });
+    );
   });
+});
+
+  // router.post("/achievements", galleryUpload.single('attachment'), (req, res) => {
+  //   const { alumnus_id, title, description, date_achieved, category } = req.body;
+  //   const attachment = req.file ? req.file.filename : null;
+  
+  // console.log("Incoming data:", req.body, "File:", req.file);
+  //   if (!alumnus_id || !title) {
+  //     return res.status(400).json({ error: "alumnus_id and title are required" });
+  //   }
+  
+  //   const sql = `
+  //     INSERT INTO achievements (alumnus_id, title, description, date_achieved,category,attachment)
+  //     VALUES (?, ?, ?, ?,?,?)
+  //   `;
+  //   con.query(sql, [alumnus_id, title, description, date_achieved || null,category || null,attachment], (err, result) => {
+  //     if (err) {
+  //       console.error("Error adding achievement:", err);
+  //       return res.status(500).json({ error: "Database error", details: err.message });
+  //     }
+  //     res.json({ success: true, message: "Achievement added", id: result.insertId });
+  //   });
+  // });
   const adminEmail = 'admin@gmail.com';  // Hardcoded admin email
 
   // Middleware to verify JWT token and extract user info (email)
@@ -342,198 +388,7 @@ function ensureAuthenticated(req, res, next) {
     }
   };
   
-  // Route to delete achievement
-  // router.delete("/achievements/:id", (req, res) => {
-  //   const { id } = req.params;
-  
-  //   // Query to get the email from alumnus_bio using the foreign key relationship
-  //   const sql = `
-  //     SELECT ab.email
-  //     FROM achievements a
-  //     JOIN alumnus_bio ab ON a.alumnus_id = ab.id
-  //     WHERE a.id = ?
-  //   `;
-  
-  //   con.query(sql, [id], (err, result) => {
-  //     if (err) {
-  //       console.error("Error fetching email:", err);
-  //       return res.status(500).json({ error: "Database error", details: err.message });
-  //     }
-  
-  //     if (result.length === 0) {
-  //       return res.status(404).json({ error: "Achievement not found" });
-  //     }
-  
-  //     // Retrieve email from the result
-  //     const email = result[0].email;
-  
-  //     // Check if the email is admin@gmail.com
-  //     if (email !== "admin@gmail.com") {
-  //       return res.status(403).json({ error: "Only admin can delete achievements." });
-  //     }
-  
-  //     // Proceed with deletion if the email is 'admin@gmail.com'
-  //     const deleteSql = "DELETE FROM achievements WHERE id = ?";
-      
-  //     con.query(deleteSql, [id], (deleteErr, deleteResult) => {
-  //       if (deleteErr) {
-  //         console.error("Error deleting achievement:", deleteErr);
-  //         return res.status(500).json({ error: "Database error", details: deleteErr.message });
-  //       }
-  
-  //       if (deleteResult.affectedRows === 0) {
-  //         return res.status(404).json({ error: "Achievement not found" });
-  //       }
-  
-  //       res.json({ success: true, message: "Achievement deleted" });
-  //     });
-  //   });
-  // });
-
-  // router.delete("/achievements/:id", (req, res) => {
-  //   const { id } = req.params;
-  
-  //   // Assuming that the logged-in user's ID is stored in req.user.id after authentication
-  //   const userId = req.user.id;
-  
-  //   // Query to get the email from users table
-  //   const getEmailSql = "SELECT email FROM users WHERE id = ?";
-    
-  //   con.query(getEmailSql, [userId], (err, result) => {
-  //     if (err) {
-  //       console.error("Error fetching user email:", err);
-  //       return res.status(500).json({ error: "Database error", details: err.message });
-  //     }
-  
-  //     if (result.length === 0) {
-  //       return res.status(404).json({ error: "User not found" });
-  //     }
-  
-  //     const email = result[0].email;
-  
-  //     // Log the email for debugging
-  //     console.log("User email fetched:", email);
-  
-  //     // Check if the email is admin@gmail.com
-  //     if (email !== "admin@gmail.com") {
-  //       console.log("Unauthorized attempt to delete by email:", email); // Debug log
-  //       return res.status(403).json({ error: "Only admin can delete achievements." });
-  //     }
-  
-  //     // If the email is admin, proceed with deleting the achievement
-  //     const deleteSql = "DELETE FROM achievements WHERE id = ?";
-  
-  //     con.query(deleteSql, [id], (deleteErr, deleteResult) => {
-  //       if (deleteErr) {
-  //         console.error("Error deleting achievement:", deleteErr);
-  //         return res.status(500).json({ error: "Database error", details: deleteErr.message });
-  //       }
-  
-  //       if (deleteResult.affectedRows === 0) {
-  //         return res.status(404).json({ error: "Achievement not found" });
-  //       }
-  
-  //       res.json({ success: true, message: "Achievement deleted" });
-  //     });
-  //   });
-  // });
-  //above is new
-  
-  // router.delete("/achievements/:id", authenticateUser, (req, res) => {
-  //   const { id } = req.params;
-  
-  //   // Get the email from the user object attached by authenticateUser middleware
-  //   const email = req.user.email;
-  
-  //   // Check if the email matches the hardcoded admin email
-  //   if (email !== adminEmail) {
-  //     return res.status(403).json({ error: "Forbidden - Admin access required" });
-  //   }
-  
-  //   // SQL query to delete the achievement
-  //   const sql = "DELETE FROM achievements WHERE id = ?";
-    
-  //   con.query(sql, [id], (err, result) => {
-  //     if (err) {
-  //       console.error("Error deleting achievement:", err);
-  //       return res.status(500).json({ error: "Database error", details: err.message });
-  //     }
-  
-  //     if (result.affectedRows === 0) {
-  //       return res.status(404).json({ error: "Achievement not found" });
-  //     }
-  
-  //     res.json({ success: true, message: "Achievement deleted" });
-  //   });
-  // });
-
-
-//   router.delete("/achievements/:id", ensureAuthenticated, ensureAdmin, (req, res) => {
-//     const { id } = req.params;
-//   //   const sql = "DELETE FROM achievements WHERE id = ?";
-//   //   // console.log(req.user);  // Check user object to verify role
-
-//   //   con.query(sql, [id], (err, result) => {
-//   //     if (err) {
-//   //       //console.log(req.user);  // Check user object to verify role
-//   //       console.error("Error deleting achievement:", err);
-//   //       return res.status(500).json({ error: "Database error", details: err.message });
-//   //     }
-//   //     if (result.affectedRows === 0) {
-//   //       return res.status(404).json({ error: "Achievement not found" });
-//   //     }
-//   //     res.json({ success: true, message: "Achievement deleted" });
-//   //   });
-//   // });
-//   const sql = "DELETE FROM achievements WHERE id = ?";
-// console.log(`Deleting achievement with ID: ${id}`);
-
-// con.query(sql, [id], (err, result) => {
-//   if (err) {
-//     console.error("Error deleting achievement:", err);
-//     return res.status(500).json({ error: "Database error", details: err.message });
-//   }
-
-//   if (result.affectedRows === 0) {
-//     return res.status(404).json({ error: "Achievement not found" });
-//   }
-
-//   res.json({ success: true, message: "Achievement deleted" });
-// });
-//   });
-  
-//   // Add a new achievement (admin only)
-//   router.post("/achievements", (req, res) => {
-//     const { alumnus_id, title, description, date_achieved } = req.body;
-//     if (!alumnus_id || !title) {
-//       return res.status(400).json({ error: "alumnus_id and title are required" });
-//     }
-  
-//     const sql = "INSERT INTO achievements (alumnus_id, title, description, date_achieved) VALUES (?, ?, ?, ?)";
-//     con.query(sql, [alumnus_id, title, description, date_achieved || null], (err, result) => {
-//       if (err) {
-//         console.error("Error adding achievement:", err);
-//         return res.status(500).json({ error: "Database error", details: err.message });
-//       }
-//       res.json({ success: true, message: "Achievement added", id: result.insertId });
-//     });
-//   });
-  
-//   // Optional: Delete an achievement (admin only)
-//   router.delete("/achievements/:id", (req, res) => {
-//     const { id } = req.params;
-//     const sql = "DELETE FROM achievements WHERE id = ?";
-//     con.query(sql, [id], (err, result) => {
-//       if (err) {
-//         console.error("Error deleting achievement:", err);
-//         return res.status(500).json({ error: "Database error", details: err.message });
-//       }
-//       if (result.affectedRows === 0) {
-//         return res.status(404).json({ error: "Achievement not found" });
-//       }
-//       res.json({ success: true, message: "Achievement deleted" });
-//     });
-//   });
+ 
 
 router.get('/jobs', (req, res) => {
     // const sql = `
@@ -559,19 +414,6 @@ router.get('/jobs', (req, res) => {
     });
 });
 
-
-// router.post('/managejob', (req, res) => {
-//     const { company, job_title, location, description, user_id } = req.body;
-
-//     const sql = 'INSERT INTO careers (company, job_title, location, description,user_id) VALUES (?, ?, ?, ?,?)';
-//     con.query(sql, [company, job_title, location, description, user_id], (err, result) => {
-//         if (err) {
-//             console.error('Error executing SQL query:', err);
-//             return res.status(500).json({ error: 'Database Error' });
-//         }
-//         return res.json({ message: 'New job added successfully', jobId: result.insertId });
-//     });
-// });
 
 
 router.put('/managejob', (req, res) => {
@@ -1086,7 +928,27 @@ router.post('/gallery', galleryUpload.single('image'), (req, res) => {
 
 
 router.get("/alumni", (_req, res) => {
-  const sql = "SELECT a.*, c.course, a.name as name FROM alumnus_bio a LEFT JOIN courses c ON c.id = a.course_id ORDER BY a.name ASC";
+  // const sql = "SELECT a.*, c.course, a.name as name FROM alumni_accounts a LEFT JOIN courses c ON c.id = a.course_id ORDER BY a.name ASC";
+   const sql = `
+    SELECT 
+      a.id,
+      a.user_id,
+      a.name,
+      a.email,
+      a.gender,
+      a.batch,
+      a.connected_to,
+      a.avatar,
+      c.course,
+      b.status,
+      b.verification_token,
+      a.created_at,
+      a.updated_at
+    FROM alumni_accounts a
+    LEFT JOIN courses c ON c.id = a.course_id
+    LEFT JOIN users b ON b.id = a.user_id
+    ORDER BY a.name ASC
+  `;
   con.query(sql, (err, result) => {
     if (err) {
       console.error("Error fetching alumni:", err);
@@ -1097,44 +959,78 @@ router.get("/alumni", (_req, res) => {
 });
 
 router.delete("/alumni/:id", (req, res) => {
-    const eid = req.params.id;
-    const sql = 'DELETE FROM alumnus_bio WHERE id=?';
-    con.query(sql, [eid], (err, result) => {
-        if (err) {
-            console.error("Error executing SQL query:", err);
-            return res.status(500).json({ error: "Query Error" });
-        }
-        return res.json({ message: 'Alumnus Deleted Successfully' });
-    })
+  const alumniId = req.params.id;
 
-})
+  // Step 1: Find the linked user_id
+  const findUserSql = "SELECT user_id FROM alumni_accounts WHERE id=?";
+  con.query(findUserSql, [alumniId], (err, result) => {
+    if (err) {
+      console.error("Error finding user_id:", err);
+      return res.status(500).json({ error: "Query Error" });
+    }
+    if (result.length === 0) {
+      return res.status(404).json({ message: "Alumnus not found" });
+    }
 
-/*router.put('/viewalumni', (req, res) => {
-    const { status, id } = req.body;
-    const sql = 'UPDATE alumnus_bio SET status=? WHERE id=?';
-    con.query(sql, [status, id], (err, result) => {
-        if (err) {
-            console.error('Error executing SQL query:', err);
-            return res.status(500).json({ error: 'Database Error' });
+    const userId = result[0].user_id;
+
+    // Step 2: Delete from alumni_accounts
+    const deleteAlumniSql = "DELETE FROM alumni_accounts WHERE id=?";
+    con.query(deleteAlumniSql, [alumniId], (err1) => {
+      if (err1) {
+        console.error("Error deleting from alumni_accounts:", err1);
+        return res.status(500).json({ error: "Delete alumni error" });
+      }
+
+      // Step 3: Delete from users
+      const deleteUserSql = "DELETE FROM users WHERE id=?";
+      con.query(deleteUserSql, [userId], (err2) => {
+        if (err2) {
+          console.error("Error deleting from users:", err2);
+          return res.status(500).json({ error: "Delete user error" });
         }
-        return res.json({ message: 'Status Updated Successfully' });
+
+        return res.json({
+          message: "Alumnus and linked user deleted successfully",
+        });
+      });
     });
-});*/
+  });
+});
+
+
 router.put('/viewalumni', (req, res) => {
-  const { status, id } = req.body;
+  const { status, id } = req.body; // here id = alumni_accounts.id
+
   if (!id || status === undefined) {
     return res.status(400).json({ error: 'ID and status are required' });
   }
-  const sql = 'UPDATE alumnus_bio SET status=? WHERE id=?';
-  con.query(sql, [status, id], (err, result) => {
+
+  // Step 1: Find user_id from alumni_accounts
+  const findUserSql = 'SELECT user_id FROM alumni_accounts WHERE id=?';
+  con.query(findUserSql, [id], (err, result) => {
     if (err) {
-      console.error('Error executing SQL query:', err);
-      return res.status(500).json({ error: 'Database Error', details: err.message });
+      console.error('Error finding user_id:', err);
+      return res.status(500).json({ error: 'Database Error' });
     }
-    if (result.affectedRows === 0) {
+    if (result.length === 0) {
       return res.status(404).json({ error: 'Alumnus not found' });
     }
-    return res.json({ message: 'Status Updated Successfully' });
+
+    const userId = result[0].user_id;
+
+    // Step 2: Update users.status using userId ✅
+    const updateSql = 'UPDATE users SET status=? WHERE id=?';
+    con.query(updateSql, [status, userId], (err2, result2) => {
+      if (err2) {
+        console.error('Error updating status:', err2);
+        return res.status(500).json({ error: 'Database Error' });
+      }
+      if (result2.affectedRows === 0) {
+        return res.status(404).json({ error: 'User not found' });
+      }
+      return res.json({ message: 'Status Updated Successfully' });
+    });
   });
 });
 
@@ -1171,7 +1067,8 @@ router.get("/up_events", (req, res) => {
 });
 
 router.get("/alumni_list", (req, res) => {
-    const sql = "SELECT a.*, c.course, a.name as name FROM alumni_accounts a LEFT JOIN courses c ON c.id = a.course_id ORDER BY a.name ASC";
+    const sql = 'SELECT a.*, u.status, a.course_id, c.course FROM alumni_accounts a JOIN users u ON u.id = a.user_id LEFT JOIN courses c ON c.id = a.course_id ORDER BY a.name ASC';
+
     con.query(sql, (err, result) => {
         if (err) return res.json({ Error: "Query Error" })
         if (result.length > 0) {
@@ -1199,8 +1096,7 @@ const storage = multer.diskStorage({
 });
 
 const upload = multer({ storage });
-
-router.put("/upaccount", upload.single('image'), async (req, res) => {
+router.put("/upaccount", upload.single("image"), async (req, res) => {
   const {
     name,
     connected_to,
@@ -1210,69 +1106,11 @@ router.put("/upaccount", upload.single('image'), async (req, res) => {
     password,
     batch,
     alumnus_id,
-    user_id
-  } = req.body;
-
-  if (!alumnus_id || !user_id || !name || !course_id || !email || !gender || !batch) {
-    return res.status(400).json({ error: "Missing required fields" });
-  }
-
-  const avatar = req.file ? req.file.filename : null; // Use saved filename
-
-  const insertSql = `
-    INSERT INTO alumni_accounts 
-    (user_id, name, connected_to, course_id, email, gender, batch, avatar)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-  `;
-  const insertValues = [user_id, name, connected_to, course_id, email, gender, batch, avatar];
-
-  con.query(insertSql, insertValues, (err) => {
-    if (err) {
-      console.error("Error inserting into alumni_accounts:", err);
-      return res.status(500).json({ error: "Failed to update alumni account" });
-    }
-
-    // Update users table
-    const updateUserSql = 'UPDATE users SET name = ?, email = ? WHERE id = ?';
-    con.query(updateUserSql, [name, email, user_id], async (err) => {
-      if (err) {
-        console.error("Error updating users table:", err);
-        return res.status(500).json({ error: "Failed to update user table" });
-      }
-
-      if (password && password.trim() !== "") {
-        try {
-          const hashedPassword = await bcrypt.hash(password, 10);
-          const updatePassSql = 'UPDATE users SET password = ? WHERE id = ?';
-          con.query(updatePassSql, [hashedPassword, user_id], (err) => {
-            if (err) {
-              console.error("Error updating password:", err);
-              return res.status(500).json({ error: "Failed to update password" });
-            }
-            return res.json({ message: "Account updated successfully with avatar" });
-          });
-        } catch (err) {
-          console.error("Password hashing failed:", err);
-          return res.status(500).json({ error: "Password hashing failed" });
-        }
-      } else {
-        return res.json({ message: "Account updated successfully with avatar" });
-      }
-    });
-  });
-});
-
-router.put("/upaccount", upload.single('image'), async (req, res) => {
-  const {
-    name,
-    connected_to,
-    course_id,
-    email,
-    gender,
-    password,
-    batch,
-    alumnus_id,
-    user_id
+    user_id,
+    phone,
+    linkedin_url,
+    company_url,
+    current_location
   } = req.body;
 
   if (!alumnus_id || !user_id || !name || !course_id || !email || !gender || !batch) {
@@ -1281,306 +1119,143 @@ router.put("/upaccount", upload.single('image'), async (req, res) => {
 
   const avatar = req.file ? req.file.filename : null;
 
-  const insertSql = `
-    INSERT INTO alumni_accounts 
-    (user_id, name, connected_to, course_id, email, gender, batch, avatar)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-    ON DUPLICATE KEY UPDATE
-      name = VALUES(name),
-      connected_to = VALUES(connected_to),
-      course_id = VALUES(course_id),
-      email = VALUES(email),
-      gender = VALUES(gender),
-      batch = VALUES(batch),
-      avatar = VALUES(avatar)
-  `;
-  const insertValues = [user_id, name, connected_to, course_id, email, gender, batch, avatar];
-
-  con.query(insertSql, insertValues, (err) => {
+  // Check if alumni_accounts row exists
+  const checkSql = "SELECT * FROM alumni_accounts WHERE user_id = ?";
+  con.query(checkSql, [user_id], (err, results) => {
     if (err) {
-      console.error("Error upserting into alumni_accounts:", err);
-      return res.status(500).json({ error: "Failed to update alumni account" });
+      console.error("Error checking alumni_accounts:", err);
+      return res.status(500).json({ error: "DB error" });
     }
 
-    // Update users table
-    const updateUserSql = 'UPDATE users SET name = ?, email = ? WHERE id = ?';
-    con.query(updateUserSql, [name, email, user_id], async (err) => {
-      if (err) {
-        console.error("Error updating users table:", err);
-        return res.status(500).json({ error: "Failed to update user table" });
+    const existing = results.length > 0 ? results[0] : null;
+
+    const handleUsersUpdate = async () => {
+      // Update users table (name & email)
+      const updateUserSql = "UPDATE users SET name = ?, email = ? WHERE id = ?";
+      con.query(updateUserSql, [name, email, user_id], async (err) => {
+        if (err) {
+          console.error("Error updating users table:", err);
+          return res.status(500).json({ error: "Failed to update users table" });
+        }
+
+        // If password provided, update it
+        if (password && password.trim() !== "") {
+          try {
+            const hashedPassword = await bcrypt.hash(password, 10);
+            const updatePassSql = "UPDATE users SET password = ? WHERE id = ?";
+            con.query(updatePassSql, [hashedPassword, user_id], (err) => {
+              if (err) {
+                console.error("Error updating password:", err);
+                return res.status(500).json({ error: "Failed to update password" });
+              }
+              return res.json({ message: "Account updated successfully" });
+            });
+          } catch (err) {
+            console.error("Password hashing failed:", err);
+            return res.status(500).json({ error: "Password hashing failed" });
+          }
+        } else {
+          return res.json({ message: "Account updated successfully" });
+        }
+      });
+    };
+
+    if (existing) {
+      // Row exists -> UPDATE
+      let updateSql = `
+        UPDATE alumni_accounts
+        SET name=?, connected_to=?, current_location=?, course_id=?, email=?, phone=?, gender=?, batch=?`;
+      let updateValues = [
+        name,
+        connected_to,
+        current_location || existing.current_location,
+        course_id,
+        email,
+        phone || existing.phone,
+        gender,
+        batch
+      ];
+
+      // preserve existing linkedin_url if not provided
+      updateSql += `, linkedin_url=?`;
+      updateValues.push(linkedin_url && linkedin_url.trim() !== "" ? linkedin_url : existing.linkedin_url);
+
+      // preserve existing company_url if not provided
+      updateSql += `, company_url=?`;
+      updateValues.push(company_url && company_url.trim() !== "" ? company_url : existing.company_url);
+
+      if (avatar) {
+        updateSql += `, avatar=?`;
+        updateValues.push(avatar);
       }
 
-      if (password && password.trim() !== "") {
-        try {
-          const hashedPassword = await bcrypt.hash(password, 10);
-          const updatePassSql = 'UPDATE users SET password = ? WHERE id = ?';
-          con.query(updatePassSql, [hashedPassword, user_id], (err) => {
-            if (err) {
-              console.error("Error updating password:", err);
-              return res.status(500).json({ error: "Failed to update password" });
-            }
-            return res.json({ message: "Account updated successfully" });
-          });
-        } catch (err) {
-          console.error("Password hashing failed:", err);
-          return res.status(500).json({ error: "Password hashing failed" });
+      updateSql += ` WHERE user_id=?`;
+      updateValues.push(user_id);
+
+      con.query(updateSql, updateValues, (err2) => {
+        if (err2) {
+          console.error("Error updating alumni_accounts:", err2);
+          return res.status(500).json({ error: "Failed to update alumni account" });
         }
-      } else {
-        return res.json({ message: "Account updated successfully" });
-      }
-    });
+        handleUsersUpdate();
+      });
+
+    } else {
+      // Row doesn’t exist -> INSERT
+      const insertSql = `
+        INSERT INTO alumni_accounts 
+        (user_id, name, connected_to, current_location, course_id, email, phone, linkedin_url, company_url, gender, batch, avatar)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
+      con.query(
+        insertSql,
+        [
+          user_id,
+          name,
+          connected_to,
+          current_location || null,
+          course_id,
+          email,
+          phone || null,
+          linkedin_url || null,
+          company_url || null,
+          gender,
+          batch,
+          avatar
+        ],
+        (err2) => {
+          if (err2) {
+            console.error("Error inserting alumni_accounts:", err2);
+            return res.status(500).json({ error: "Failed to insert alumni account" });
+          }
+          handleUsersUpdate();
+        }
+      );
+    }
   });
 });
 
 
-
-// //Optional: set up storage config for avatar file (if needed)
-// const storage = multer.memoryStorage(); // or configure diskStorage
-// const upload = multer({ storage });
-
-// router.put("/upaccount", upload.single('image'), async (req, res) => {
-//     try {
-//       const {
-//         name,
-//         connected_to,
-//         course_id,
-//         email,
-//         gender,
-//         password,
-//         batch,
-//         alumnus_id,
-//         user_id
-//       } = req.body;
-  
-//       if (!alumnus_id || !user_id || !name || !course_id || !email || !gender || !batch) {
-//         return res.status(400).json({ error: "Missing required fields" });
-//       }
-  
-//       const avatar = req.file ? req.file.originalname : null;
-  
-//       // Proceed with DB update like before, using `alumnus_id` as `id`
-//       //const sql = `
-//     //     UPDATE alumni_accounts 
-//     //     SET user_id = ?, name = ?, connected_to = ?, course_id = ?, email = ?, gender = ?, batch = ?, avatar = ?
-//     //     WHERE id = ?
-//     //   `;
-//     //   const values = [user_id, name, connected_to, course_id, email, gender, batch, avatar, alumnus_id];
-//     const sql = `
-//     INSERT INTO alumni_accounts 
-//     (user_id, name, connected_to, course_id, email, gender, batch, avatar)
-//     VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-//   `;
-//   const values = [user_id, name, connected_to, course_id, email, gender, batch, avatar];
-  
-//       con.query(sql, values, (err, result) => {
-//         if (err) {
-//           console.error("Error updating account:", err);
-//           return res.status(500).json({ error: "Internal server error" });
-//         }
-  
-//         // Update users table
-//         const userSql = 'UPDATE users SET name = ?, email = ? WHERE id = ?';
-//         const userValues = [name, email, user_id];
-  
-//         con.query(userSql, userValues, (err) => {
-//           if (err) {
-//             console.error('Error updating users:', err);
-//             return res.status(500).json({ error: 'Failed to update user table' });
-//           }
-  
-//           if (password) {
-//             //import bcrypt from 'bcrypt';
-
-//         //    //  const bcrypt = require('bcrypt');
-//             const saltRounds = 10;
-//             bcrypt.hash(password, saltRounds, (err, hashedPassword) => {
-//               if (err) {
-//                 console.error('Error hashing password:', err);
-//                 return res.status(500).json({ error: 'Password hashing failed' });
-//               }
-  
-//               const passSql = 'UPDATE users SET password = ? WHERE id = ?';
-//               con.query(passSql, [hashedPassword, user_id], (err) => {
-//                 if (err) {
-//                   console.error('Error updating password:', err);
-//                   return res.status(500).json({ error: 'Failed to update password' });
-//                 }
-//         if (password && password.trim() !== '') {
-//             // New password provided — hash and update
-//             const hashedPassword =  bcrypt.hash(password, 10);
-//             const psql = 'UPDATE users SET password = ? WHERE id = ?';
-//              db.query(psql, [hashedPassword, user_id]);
-//           } else {
-//             // No password provided — reuse existing password from DB
-//             const [existingUser] =  db.query('SELECT password FROM users WHERE id = ?', [user_id]);
-//             const existingPassword = existingUser?.[0]?.password;
-          
-//             if (existingPassword) {
-//               const psql = 'UPDATE users SET password = ? WHERE id = ?';
-//                db.query(psql, [existingPassword, user_id]);
-//             } else {
-//               console.error('No existing password found for user');
-//               return res.status(500).json({ error: 'Unable to retain existing password' });
-//             }
-//           }
-          
-//                 res.json({ message: 'Account updated successfully' });
-//               });
-//             });
-//     //       } 
-//     } catch (error) {
-//       console.error('Error updating account:', error);
-//       res.status(500).json({ error: 'An error occurred' });
-//     }
-//   });
-  
-//new code 
-
-
-
-
-
-
-
-
-// router.put("/upaccount", (req, res) => {
-//     const {
-//       id,
-//       user_id,
-//       name,
-//       connected_to,
-//       course_id,
-//       email,
-//       gender,
-//       batch,
-//       avatar // optional
-//     } = req.body;
-  
-//     if (!id || !user_id || !name || !course_id || !email || !gender || !batch) {
-//       return res.status(400).json({ error: "Missing required fields" });
-//     }
-  
-//     const sql = `
-//       UPDATE alumni_accounts 
-//       SET user_id = ?, name = ?, connected_to = ?, course_id = ?, email = ?, gender = ?, batch = ?, avatar = ? 
-//       WHERE id = ?
-//     `;
-  
-//     const values = [user_id, name, connected_to, course_id, email, gender, batch, avatar, id];
-  
-//     db.query(sql, values, (err, result) => {
-//       if (err) {
-//         console.error("Error updating account:", err);
-//         return res.status(500).json({ error: "Internal server error" });
-//       }
-//       res.json({ message: "Account updated successfully" });
-//     });
-//   });
-
-  
-//             // Update users table
-//             const usql = 'UPDATE users SET name = ?, email = ? WHERE id = ?';
-//             const uvalues = [name, email, user_id];
-//             con.query(usql, uvalues, (err, result) => {
-//                 if (err) {
-//                     console.error('Error updating users:', err);
-//                     res.status(500).json({ error: 'An error occurred' });
-//                     return;
-//                 }
-//                 // Update password in users table
-//                 if (hashedPassword) {
-//                     const psql = 'UPDATE users SET password = ? WHERE id = ?';
-//                     const pvalues = [hashedPassword, user_id];
-//                     con.query(psql, pvalues, (err, result) => {
-//                         if (err) {
-//                             console.error('Error updating password:', err);
-//                             res.status(500).json({ error: 'An error occurred' });
-//                             return;
-//                         }
-//                         res.json({ message: 'Account updated successfully' });
-//                     });
-//                 } else {
-//                     res.json({ message: 'Account updated successfully' });
-//                 }
-//             });
-        
-//      catch (error) {
-//         console.error('Error updating account:', error);
-//         res.status(500).json({ error: 'An error occurred' });
-//     }
-// });
-
-
-// router.put('/upaccount', avatarUpload.single('image'), (req, res) => {
-//     try {
-//         // const avatar = req.file.path ;
-
-//         const { name, connected_to, course_id, email, gender, batch, password, alumnus_id } = req.body;
-
-//         // Update alumnus_bio table
-//         const asql = 'UPDATE alumnus_bio SET name = ?, connected_to = ?, course_id = ?, email = ?, gender = ?, batch = ? WHERE id = ?';
-//         const avalues = [name, connected_to, course_id, email, gender, batch, alumnus_id];
-//         con.query(asql, avalues, (err, result) => {
-//             if (err) {
-//                 console.error('Error updating alumnus_bio:', err);
-//                 res.status(500).json({ error: 'An error occurred' });
-//                 return;
-//             }
-
-//             // avatr
-//             if (req.file) {
-//                 const avsql = 'UPDATE alumnus_bio SET avatar = ? WHERE id = ?';
-//                 const avvalues = [req.file.path, alumnus_id];
-//                 con.query(avsql, avvalues, (err, result) => {
-//                     if (err) {
-//                         console.error('Error updating pic:', err);
-//                         // res.status(500).json({ error: 'pic error occurred' });
-//                         return;
-//                     }
-//                     // res.json({ message: 'pic updated successfully' });
-//                 });
-//             }
-
-//             // Update users table
-//             const usql = 'UPDATE users SET name = ?, email = ? WHERE id = ?';
-//             const uvalues = [name, email, alumnus_id];
-//             con.query(usql, uvalues, (err, result) => {
-//                 if (err) {
-//                     console.error('Error updating users:', err);
-//                     res.status(500).json({ error: 'An error occurred' });
-//                     return;
-//                 }
-//                 // Update password in users table
-//                 if (password) {
-//                     const psql = 'UPDATE users SET password = ? WHERE id = ?';
-//                     const pvalues = [password, alumnus_id];
-//                     con.query(psql, pvalues, (err, result) => {
-//                         if (err) {
-//                             console.error('Error updating password:', err);
-//                             res.status(500).json({ error: 'An error occurred' });
-//                             return;
-//                         }
-//                         res.json({ message: 'Account updated successfully' });
-//                     });
-//                 } else {
-//                     res.json({ message: 'Account updated successfully' });
-//                 }
-//             });
-//         });
-//     } catch (error) {
-//         console.error('Error updating account:', error);
-//         res.status(500).json({ error: 'An error occurred' });
-//     }
-// });
-
 router.get("/profile/:user_id", (req, res) => {
   const { user_id } = req.params;
-  console.log("Requested userId:", user_id); // fixed here
 
-  const sql = `
-    SELECT u.id as user_id, u.name as username, u.email as user_email, 
-           a.id as alumni_id, a.name as alumni_name, a.course_id, a.connected_to, 
-           a.gender, a.batch, a.avatar, c.course
+ const sql = `
+    SELECT 
+      u.id AS user_id,
+      u.name AS username,
+      u.email AS user_email,
+      u.status,
+      a.id AS alumni_id,
+      a.name AS alumni_name,
+      a.course_id,
+      a.connected_to,
+      a.phone,
+      a.linkedin_url,
+      a.company_url,
+      a.current_location,
+      a.gender,
+      a.batch,
+      a.avatar,
+      c.course
     FROM users u
     LEFT JOIN alumni_accounts a ON u.id = a.user_id
     LEFT JOIN courses c ON c.id = a.course_id
@@ -1595,10 +1270,10 @@ router.get("/profile/:user_id", (req, res) => {
     if (result.length === 0) {
       return res.status(404).json({ message: "Profile not found" });
     }
+    console.log("Profile result:", result[0]); // check console
     return res.json(result[0]);
   });
 });
-
 
 
 const getAllStudentEmails = () => {
@@ -1615,7 +1290,7 @@ const getAllStudentEmails = () => {
     });
   };
 
-  // Add this route after existing GET routes
+//   // Add this route after existing GET routes
 router.get("/alumnusdetails", (req, res) => {
     const { id } = req.query;
     if (!id) return res.status(400).json({ error: "ID is required" });
@@ -1637,6 +1312,33 @@ router.get("/alumnusdetails", (req, res) => {
       res.json(result); // Return as array to match MyAccount.jsx expectation
     });
   });
+
+// Add this route after existing GET routes
+// router.get("/alumnusdetails", (req, res) => {
+//   const { id } = req.query;
+//   if (!id) return res.status(400).json({ error: "ID is required" });
+
+//   const sql = `
+//     SELECT a.id, a.user_id, a.name, a.connected_to, a.course_id, a.email, a.gender, 
+//            a.batch, a.avatar, a.phone, a.linkedin_url, a.company_url, a.current_location,
+//            c.course 
+//     FROM alumni_accounts a
+//     LEFT JOIN courses c ON a.course_id = c.id 
+//     WHERE a.user_id = ?
+//   `;
+
+//   con.query(sql, [id], (err, result) => {
+//     if (err) {
+//       console.error("Error fetching alumnus details:", err);
+//       return res.status(500).json({ error: "Database error", details: err.message });
+//     }
+//     if (result.length === 0) {
+//       return res.status(404).json({ error: "Alumnus not found" });
+//     }
+//     res.json(result); // Return as array to match MyAccount.jsx expectation
+//   });
+// });
+
   
   router.post('/managejob', async (req, res) => {
     const { company, job_title, location, description, user_id } = req.body;
