@@ -172,8 +172,9 @@ const AlumniList = () => {
                                         <div className="card-body text-center">
                                             <h5 className="card-title text-center pad-zero">
                                                 {a.name} <small>
-                                                    <i className={`badge badge-primary ${a.status === 1 ? '' : 'd-none'}`}>Verified</i>
-                                                    <i className={`badge badge-warning ${a.status === 0 ? '' : 'd-none'}`}>Unverified</i>
+                                                    {a.status === 1 && (
+    <i className="badge badge-primary">Verified</i>
+  )}
                                                 </small>
                                             </h5>
                                              {a.batch !== "0000" && (
@@ -188,6 +189,60 @@ const AlumniList = () => {
                                             {a.connected_to && (
                                                 <p className="card-text"><strong>Currently working in/as:</strong> {a.connected_to}</p>
                                             )}
+
+
+                                            {a.linkedin_url && (
+  <p className="card-text">
+   
+    <a 
+      href={a.linkedin_url} 
+      target="_blank" 
+      rel="noopener noreferrer"
+      style={{ textDecoration: 'none', color: '#0e76a8', fontWeight: 'bold', display: 'inline-flex', alignItems: 'center', gap: '5px' }}
+    >
+      <i className="fab fa-linkedin fa-lg"></i> : Connect me here
+    </a>
+  </p>
+)}
+
+{a.company_url && (
+  <p className="card-text">
+    
+    <a 
+      href={a.company_url} 
+      target="_blank" 
+      rel="noopener noreferrer"
+      style={{ textDecoration: 'none', color: '#4CAF50', fontWeight: 'bold', display: 'inline-flex', alignItems: 'center', gap: '5px' }}
+    >
+      <i className="fas fa-globe fa-lg"></i> : Visit My Workplace
+    </a>
+  </p>
+)}{a.phone && (
+  <p className="card-text">
+    
+    <a href={`tel:${a.phone}`} style={{ textDecoration: 'none', color: '#007bff', display: 'inline-flex', alignItems: 'center', gap: '5px' }}>
+      <i className="fas fa-phone-alt"></i> {a.phone}
+    </a>
+  </p>
+)}
+
+  {/* {a.linkedin_url && (
+    <p className="card-text">
+      <strong>LinkedIn:</strong> 
+      <a href={a.linkedin_url} target="_blank" rel="noopener noreferrer">{a.linkedin_url}</a>
+    </p>
+  )}
+
+  {a.company_url && (
+    <p className="card-text">
+      <strong>Company:</strong> 
+      <a href={a.company_url} target="_blank" rel="noopener noreferrer">{a.company_url}</a>
+    </p>
+  )} */}
+
+  {a.current_location && (
+    <p className="card-text"><strong>Location:</strong> {a.current_location}</p>
+  )}
                                         </div>
                                     </div>
                                 </div>

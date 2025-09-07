@@ -188,3 +188,42 @@ margin: 80px auto 20px;
 .bio-icon.delete:hover {
   color: red;
 }
+.verified-tick {
+  margin-left: 6px;
+  font-size: 1rem;
+  vertical-align: middle;
+    color: #1da1f2;
+}
+.company-link {
+  text-decoration: none;
+  color: white;
+  background-color: #4CAF50; /* green */
+  padding: 4px 10px;
+  border-radius: 5px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-weight: bold;
+  transition: background-color 0.3s;
+}
+
+.company-link:hover {
+  background-color: #388E3C; /* darker green on hover */
+}
+.linkedin-link {
+  text-decoration: none;
+  color: white;
+  background-color: #0e76a8;
+  padding: 4px 10px;
+  border-radius: 5px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-weight: bold;
+  transition: background-color 0.3s;
+}
+
+.linkedin-link:hover {
+  background-color: #004182;
+}
+

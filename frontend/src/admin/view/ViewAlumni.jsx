@@ -4,6 +4,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { ToastContainer, toast } from 'react-toastify';
 import { baseUrl } from '../../utils/globalurl';
 // import { baseUrl } from '../../utils/globalurl';
+import "./ViewAlumni.css";
 
 
 const ViewAlumni = () => {
@@ -48,7 +49,7 @@ const ViewAlumni = () => {
                     <div>
                         <center>
                             <div className="avatar">
-                                <img src={`${baseUrl}${alumni.avatar}`} className="vaimg" alt="avatar" />
+                                <img src={`${baseUrl}${alumni.avatar}`}  alt="avatar" />
                             </div>
                         </center>
                     </div>

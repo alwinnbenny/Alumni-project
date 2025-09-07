@@ -1,0 +1,20 @@
+.avatar {
+  width: 90px;              /* slightly bigger, looks cleaner */
+  height: 90px;
+  border-radius: 50%;
+  overflow: hidden;
+  margin: 0 auto 20px;        /* centers + spacing at bottom */
+  border: 3px solid #007bff;  /* blue border */
+  box-shadow: 0 4px 8px rgba(0,0,0,0.15); /* subtle shadow */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f8f9fa;        /* fallback bg */
+}
+
+.avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;  /* ensures it always fills the circle */
+  object-position: center; /* keeps face centered */
+}

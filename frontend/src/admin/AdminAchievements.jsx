@@ -314,6 +314,8 @@ const Achievements = () => {
     attachment:"", // attachment field
   });
   const [loading, setLoading] = useState(true); // Loading state to handle async fetch
+const [modalImage, setModalImage] = useState(null); // store clicked image src
+const [isModalOpen, setIsModalOpen] = useState(false); // modal open/close
 
   useEffect(() => {
     // Fetch all achievements
@@ -352,7 +354,16 @@ const Achievements = () => {
     const { name, files } = e.target;
     setFormData({ ...formData, [name]: files[0] }); // Save the selected file
   };
+// Add these functions here
+const openImageModal = (imgSrc) => {
+  setModalImage(imgSrc);
+  setIsModalOpen(true);
+};
 
+const closeModal = () => {
+  setIsModalOpen(false);
+  setModalImage(null);
+};
   const handleSubmit = (e) => {
     e.preventDefault();
     const submitData = new FormData(); // Create a FormData object for file upload
@@ -450,7 +461,7 @@ const Achievements = () => {
                     <option value="">Select Achiever</option>
                     {Array.isArray(alumni) && alumni.length > 0 ? (
                       alumni.map((alum) => (
-                        <option key={alum.id} value={alum.id}>
+                        <option key={alum.user_id} value={alum.user_id}>
                           {alum.name} ({alum.email})
                         </option>
                       ))
@@ -552,11 +563,19 @@ const Achievements = () => {
                       <td>
   {ach.attachment ? (
     ach.attachment.match(/\.(jpg|jpeg|png|gif)$/i) ? (
+      // <img
+      //   src={`${baseUrl}images/${ach.attachment}`}
+      //   alt="Attachment"
+      //   style={{ width: 60, height: "auto", borderRadius: 4 }}
+      // />
+
       <img
-        src={`${baseUrl}images/${ach.attachment}`}
-        alt="Attachment"
-        style={{ width: 60, height: "auto", borderRadius: 4 }}
-      />
+  src={`${baseUrl}images/${ach.attachment}`}
+  alt="Attachment"
+  style={{ width: 60, height: "auto", borderRadius: 4, cursor: "pointer" }}
+  onClick={() => openImageModal(`${baseUrl}images/${ach.attachment}`)}
+/>
+
     ) : (
       <a
         href={`${baseUrl}images/${ach.attachment}`}
@@ -588,8 +607,39 @@ const Achievements = () => {
           </div>
         </div>
       </div>
+      {isModalOpen && (
+  <div
+    onClick={closeModal}
+    style={{
+      position: "fixed",
+      top: 0,
+      left: 0,
+      width: "100%",
+      height: "100%",
+      backgroundColor: "rgba(0,0,0,0.7)",
+      display: "flex",
+      justifyContent: "center",
+      alignItems: "center",
+      zIndex: 1000,
+      cursor: "pointer",
+    }}
+  >
+    <img
+      src={modalImage}
+      alt="Enlarged"
+      style={{
+        maxWidth: "90%",
+        maxHeight: "90%",
+        borderRadius: 8,
+        boxShadow: "0 0 10px #000",
+      }}
+    />
+  </div>
+)}
+
     </>
   );
 };
+
 
 export default Achievements;
