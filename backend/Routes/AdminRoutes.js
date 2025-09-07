@@ -391,17 +391,11 @@ function ensureAuthenticated(req, res, next) {
  
 
 router.get('/jobs', (req, res) => {
-    // const sql = `
-    //     SELECT c.*, u.name
-    //     FROM careers c
-    //     INNER JOIN users u ON u.id = c.user_id
-    //     ORDER BY c.id DESC
-    // `;
     const sql = `
-    SELECT careers.*, users.name
-    FROM careers
-    INNER JOIN users ON careers.user_id = users.id
-    ORDER BY careers.id DESC       
+        SELECT careers.*, users.name
+        FROM careers
+        INNER JOIN users ON careers.user_id = users.id
+        ORDER BY careers.id DESC
     `;
 
     con.query(sql, (err, result) => {
@@ -409,28 +403,72 @@ router.get('/jobs', (req, res) => {
             console.error('Error executing SQL query:', err);
             return res.status(500).json({ error: 'Query Error' });
         }
-        // Send the fetched job data to the client
-        res.json(result);
+
+        // Add remaining time in hours/minutes for each job
+        const jobsWithRemaining = result.map(job => {
+            if (!job.deadline) {
+                job.remaining_time = 'No deadline';
+                return job;
+            }
+            const deadline = new Date(job.deadline);
+            const now = new Date();
+            const diffMs = deadline - now;
+
+            if (diffMs <= 0) {
+                job.remaining_time = 'Expired';
+            } else {
+                const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+                const diffMinutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+                job.remaining_time = `${diffHours} hour(s) ${diffMinutes} minute(s) left`;
+            }
+            return job;
+        });
+
+        res.json(jobsWithRemaining);
     });
 });
 
-
-
 router.put('/managejob', (req, res) => {
-    const { id, company, job_title, location, description } = req.body;
-
-    if (id) {
-        const sql = 'UPDATE careers SET company=?, job_title=?, location=?, description=? WHERE id=?';
-        con.query(sql, [company, job_title, location, description, id], (err, result) => {
-            if (err) {
-                console.error('Error executing SQL query:', err);
-                return res.status(500).json({ error: 'Database Error' });
-            }
-            return res.json({ message: 'Job updated successfully' });
-        });
-    } else {
-        return res.status(400).json({ error: 'Invalid Request: No ID provided for update' });
+  const { id, company, job_title, location, description, user_id, deadline } = req.body;
+  if (!id) {
+    return res.status(400).json({ error: 'Job ID is required for update' });
+  }
+  const sql = 'UPDATE careers SET company=?, job_title=?, location=?, description=?, user_id=?, deadline=? WHERE id=?';
+  con.query(sql, [company, job_title, location, description, user_id, deadline, id], (err, result) => {
+    if (err) {
+      console.error('Error updating job:', err);
+      return res.status(500).json({ error: 'Database Error' });
     }
+    return res.json({ message: 'Job updated successfully' });
+  });
+});
+router.post('/managejob', (req, res) => {
+  const { company, job_title, location, description, user_id, deadline } = req.body;
+  const sql = 'INSERT INTO careers (company, job_title, location, description, user_id, deadline) VALUES (?, ?, ?, ?, ?, ?)';
+
+  con.query(sql, [company, job_title, location, description, user_id, deadline], async (err, result) => {
+    if (err) {
+      console.error('Error executing SQL query:', err);
+      return res.status(500).json({ error: 'Database Error' });
+    }
+  
+    try {
+      const emails = await getAllStudentEmails();
+      const subject = `New Job Posted: ${job_title}`;
+      const html = `A new job has been posted:<br><br>Company: ${company}<br>Title: ${job_title}<br>Location: ${location}<br>Description: ${description}<br>Deadline: ${deadline ? deadline : 'Not specified'}`;
+  
+      await Promise.all(emails.map(email => sendEmail(email, subject, html)));
+  
+      return res.json({ message: 'New job added successfully and emails sent', jobId: result.insertId });
+    } catch (error) {
+      console.error('Error fetching emails or sending email:', error);
+      if (error.code === 'ENOTFOUND' || error.code === 'EAI_AGAIN') {
+        return res.status(500).json({ error: 'Network Error: Unable to send emails' });
+      } else {
+        return res.status(500).json({ error: 'Error sending emails' });
+      }
+    }
+  });
 });
 
 // Forgot Password Route
@@ -1235,6 +1273,170 @@ router.put("/upaccount", upload.single("image"), async (req, res) => {
 });
 
 
+
+// //Optional: set up storage config for avatar file (if needed)
+// const storage = multer.memoryStorage(); // or configure diskStorage
+// const upload = multer({ storage });
+
+// router.put("/upaccount", upload.single('image'), async (req, res) => {
+//     try {
+//       const {
+//         name,
+//         connected_to,
+//         course_id,
+//         email,
+//         gender,
+//         password,
+//         batch,
+//         alumnus_id,
+//         user_id
+//       } = req.body;
+  
+//       if (!alumnus_id || !user_id || !name || !course_id || !email || !gender || !batch) {
+//         return res.status(400).json({ error: "Missing required fields" });
+//       }
+  
+//       const avatar = req.file ? req.file.originalname : null;
+  
+//       // Proceed with DB update like before, using `alumnus_id` as `id`
+//       //const sql = `
+//     //     UPDATE alumni_accounts 
+//     //     SET user_id = ?, name = ?, connected_to = ?, course_id = ?, email = ?, gender = ?, batch = ?, avatar = ?
+//     //     WHERE id = ?
+//     //   `;
+//     //   const values = [user_id, name, connected_to, course_id, email, gender, batch, avatar, alumnus_id];
+//     const sql = `
+//     INSERT INTO alumni_accounts 
+//     (user_id, name, connected_to, course_id, email, gender, batch, avatar)
+//     VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+//   `;
+//   const values = [user_id, name, connected_to, course_id, email, gender, batch, avatar];
+  
+//       con.query(sql, values, (err, result) => {
+//         if (err) {
+//           console.error("Error updating account:", err);
+//           return res.status(500).json({ error: "Internal server error" });
+//         }
+  
+//         // Update users table
+//         const userSql = 'UPDATE users SET name = ?, email = ? WHERE id = ?';
+//         const userValues = [name, email, user_id];
+  
+//         con.query(userSql, userValues, (err) => {
+//           if (err) {
+//             console.error('Error updating users:', err);
+//             return res.status(500).json({ error: 'Failed to update user table' });
+//           }
+  
+//           if (password) {
+//             //import bcrypt from 'bcrypt';
+
+//         //    //  const bcrypt = require('bcrypt');
+//             const saltRounds = 10;
+//             bcrypt.hash(password, saltRounds, (err, hashedPassword) => {
+//               if (err) {
+//                 console.error('Error hashing password:', err);
+//                 return res.status(500).json({ error: 'Password hashing failed' });
+//               }
+  
+//               const passSql = 'UPDATE users SET password = ? WHERE id = ?';
+//               con.query(passSql, [hashedPassword, user_id], (err) => {
+//                 if (err) {
+//                   console.error('Error updating password:', err);
+//                   return res.status(500).json({ error: 'An error occurred' });
+//                 }
+//         if (password && password.trim() !== '') {
+//             // New password provided — hash and update
+//             const hashedPassword =  bcrypt.hash(password, 10);
+//             const psql = 'UPDATE users SET password = ? WHERE id = ?';
+//              db.query(psql, [hashedPassword, user_id]);
+//           } else {
+//             // No password provided — reuse existing password from DB
+//             const [existingUser] =  db.query('SELECT password FROM users WHERE id = ?', [user_id]);
+//             const existingPassword = existingUser?.[0]?.password;
+          
+//             if (existingPassword) {
+//               const psql = 'UPDATE users SET password = ? WHERE id = ?';
+//                db.query(psql, [existingPassword, user_id]);
+//             } else {
+//               console.error('No existing password found for user');
+//               return res.status(500).json({ error: 'Unable to retain existing password' });
+//             }
+//           }
+          
+//                 res.json({ message: 'Account updated successfully' });
+//               });
+//             });
+//     //       } 
+//     } catch (error) {
+//       console.error('Error updating account:', error);
+//       res.status(500).json({ error: 'An error occurred' });
+//     }
+// });
+
+
+// router.put('/upaccount', avatarUpload.single('image'), (req, res) => {
+//     try {
+//         // const avatar = req.file.path ;
+
+//         const { name, connected_to, course_id, email, gender, batch, password, alumnus_id } = req.body;
+
+//         // Update alumnus_bio table
+//         const asql = 'UPDATE alumnus_bio SET name = ?, connected_to = ?, course_id = ?, email = ?, gender = ?, batch = ? WHERE id = ?';
+//         const avalues = [name, connected_to, course_id, email, gender, batch, alumnus_id];
+//         con.query(asql, avalues, (err, result) => {
+//             if (err) {
+//                 console.error('Error updating alumnus_bio:', err);
+//                 res.status(500).json({ error: 'An error occurred' });
+//                 return;
+//             }
+
+//             // avatr
+//             if (req.file) {
+//                 const avsql = 'UPDATE alumnus_bio SET avatar = ? WHERE id = ?';
+//                 const avvalues = [req.file.path, alumnus_id];
+//                 con.query(avsql, avvalues, (err, result) => {
+//                     if (err) {
+//                         console.error('Error updating pic:', err);
+//                         // res.status(500).json({ error: 'pic error occurred' });
+//                         return;
+//                     }
+//                     // res.json({ message: 'pic updated successfully' });
+//                 });
+//             }
+
+//             // Update users table
+//             const usql = 'UPDATE users SET name = ?, email = ? WHERE id = ?';
+//             const uvalues = [name, email, alumnus_id];
+//             con.query(usql, uvalues, (err, result) => {
+//                 if (err) {
+//                     console.error('Error updating users:', err);
+//                     res.status(500).json({ error: 'An error occurred' });
+//                     return;
+//                 }
+//                 // Update password in users table
+//                 if (password) {
+//                     const psql = 'UPDATE users SET password = ? WHERE id = ?';
+//                     const pvalues = [password, alumnus_id];
+//                     con.query(psql, pvalues, (err, result) => {
+//                         if (err) {
+//                             console.error('Error updating password:', err);
+//                             res.status(500).json({ error: 'An error occurred' });
+//                             return;
+//                         }
+//                         res.json({ message: 'Account updated successfully' });
+//                     });
+//                 } else {
+//                     res.json({ message: 'Account updated successfully' });
+//                 }
+//             });
+//         });
+//     } catch (error) {
+//         console.error('Error updating account:', error);
+//         res.status(500).json({ error: 'An error occurred' });
+//     }
+// });
+
 router.get("/profile/:user_id", (req, res) => {
   const { user_id } = req.params;
 
@@ -1341,10 +1543,10 @@ router.get("/alumnusdetails", (req, res) => {
 
   
   router.post('/managejob', async (req, res) => {
-    const { company, job_title, location, description, user_id } = req.body;
-    const sql = 'INSERT INTO careers (company, job_title, location, description, user_id) VALUES (?, ?, ?, ?, ?)';
-  
-    con.query(sql, [company, job_title, location, description, user_id], async (err, result) => {
+    const { company, job_title, location, description, user_id, deadline } = req.body;
+    const sql = 'INSERT INTO careers (company, job_title, location, description, user_id, deadline) VALUES (?, ?, ?, ?, ?, ?)';
+
+    con.query(sql, [company, job_title, location, description, user_id, deadline], async (err, result) => {
       if (err) {
         console.error('Error executing SQL query:', err);
         return res.status(500).json({ error: 'Database Error' });
@@ -1353,7 +1555,7 @@ router.get("/alumnusdetails", (req, res) => {
       try {
         const emails = await getAllStudentEmails();
         const subject = `New Job Posted: ${job_title}`;
-        const html = `A new job has been posted:<br><br>Company: ${company}<br>Title: ${job_title}<br>Location: ${location}<br>Description: ${description}`;
+        const html = `A new job has been posted:<br><br>Company: ${company}<br>Title: ${job_title}<br>Location: ${location}<br>Description: ${description}<br>Deadline: ${deadline ? deadline : 'Not specified'}`;
   
         await Promise.all(emails.map(email => sendEmail(email, subject, html)));
   

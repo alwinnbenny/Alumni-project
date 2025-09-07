@@ -77,6 +77,7 @@ const AdminJobs = () => {
                                                     <th className="">Company</th>
                                                     <th className="">Job Title</th>
                                                     <th className="">Posted By</th>
+                                                    <th className="">Deadline</th>
                                                     <th className="text-center">Action</th>
                                                 </tr>
                                             </thead>
@@ -88,6 +89,9 @@ const AdminJobs = () => {
                                                             <td className=""><b>{job.company}</b></td>
                                                             <td className=""><b>{job.job_title}</b></td>
                                                             <td className=""><b>{job.name}</b></td>
+                                                            <td className="">
+                                                                <b>{job.deadline ? new Date(job.deadline).toLocaleDateString() : 'N/A'}</b>
+                                                            </td> {/* Add this line */}
                                                             <td className="text-center justify-content-center border-0 d-flex gap-1">
                                                                 <button className="btn btn-sm btn-outline-primary view_career" type="button" onClick={() => openModal(job)}>View</button>
                                                                 <Link to="/dashboard/jobs/manage" state={{ action: "edit", data: job }} className="btn btn-sm btn-outline-primary edit_career" >Edit</Link>
