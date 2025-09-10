@@ -622,6 +622,8 @@ import React, { useState } from 'react'
 import ReactQuill from 'react-quill';
 import { ToastContainer, toast } from 'react-toastify';
 import { baseUrl } from '../../utils/globalurl';
+import 'react-toastify/dist/ReactToastify.css';
+
 
 
 const Manage_Career = () => {
