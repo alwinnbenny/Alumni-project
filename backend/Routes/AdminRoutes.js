@@ -976,6 +976,7 @@ router.get("/alumni", (_req, res) => {
       a.gender,
       a.batch,
       a.connected_to,
+      a.company_name,
       a.avatar,
       c.course,
       b.status,
@@ -1145,6 +1146,7 @@ router.put("/upaccount", upload.single("image"), async (req, res) => {
     batch,
     alumnus_id,
     user_id,
+    company_name,
     phone,
     linkedin_url,
     company_url,
@@ -1213,7 +1215,8 @@ router.put("/upaccount", upload.single("image"), async (req, res) => {
         gender,
         batch
       ];
-
+updateSql += `, company_name=?`;
+      updateValues.push(company_name && company_name.trim() !== "" ? company_name : existing.company_name);
       // preserve existing linkedin_url if not provided
       updateSql += `, linkedin_url=?`;
       updateValues.push(linkedin_url && linkedin_url.trim() !== "" ? linkedin_url : existing.linkedin_url);
@@ -1242,8 +1245,8 @@ router.put("/upaccount", upload.single("image"), async (req, res) => {
       // Row doesn’t exist -> INSERT
       const insertSql = `
         INSERT INTO alumni_accounts 
-        (user_id, name, connected_to, current_location, course_id, email, phone, linkedin_url, company_url, gender, batch, avatar)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
+        (user_id, name, connected_to, current_location, course_id, email,company_name, phone, linkedin_url, company_url, gender, batch, avatar)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,?)`;
       con.query(
         insertSql,
         [
@@ -1254,6 +1257,7 @@ router.put("/upaccount", upload.single("image"), async (req, res) => {
           course_id,
           email,
           phone || null,
+          company_name || null, 
           linkedin_url || null,
           company_url || null,
           gender,
@@ -1453,6 +1457,7 @@ router.get("/profile/:user_id", (req, res) => {
       a.phone,
       a.linkedin_url,
       a.company_url,
+      a.company_name,
       a.current_location,
       a.gender,
       a.batch,

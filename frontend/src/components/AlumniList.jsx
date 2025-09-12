@@ -189,6 +189,9 @@ const AlumniList = () => {
                                             {a.connected_to && (
                                                 <p className="card-text"><strong>Currently working in/as:</strong> {a.connected_to}</p>
                                             )}
+{a.connected_to && (
+                                                <p className="card-text"><strong>Currently working at:</strong> {a.company_name}</p>
+                                            )}
 
 
                                             {a.linkedin_url && (
@@ -214,7 +217,7 @@ const AlumniList = () => {
       rel="noopener noreferrer"
       style={{ textDecoration: 'none', color: '#4CAF50', fontWeight: 'bold', display: 'inline-flex', alignItems: 'center', gap: '5px' }}
     >
-      <i className="fas fa-globe fa-lg"></i> : Visit My Workplace
+      <i className="fas fa-globe fa-lg"></i> : {a.company_name || "N/A"}
     </a>
   </p>
 )}{a.phone && (

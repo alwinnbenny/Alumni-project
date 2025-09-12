@@ -90,6 +90,7 @@ const Profile = () => {
           <p><strong>Batch:</strong> {profile.batch || "N/A"}</p>
           <p><strong>Gender:</strong> {profile.gender || "N/A"}</p>
           <p><strong>Connected To:</strong> {profile.connected_to || "N/A"}</p>
+           <p><strong>Connected At:</strong> {profile.company_name || "N/A"}</p>
 
 <p>
   {profile.linkedin_url ? (
@@ -103,7 +104,7 @@ const Profile = () => {
     </a>
   ) : "N/A"}
 </p>
-
+{/* 
 <p>
    {profile.company_url ? (
     <a 
@@ -112,7 +113,20 @@ const Profile = () => {
       rel="noopener noreferrer" 
       style={{ textDecoration: 'none', color: '#4CAF50', fontWeight: 'bold' }}
     >
-      <i className="fas fa-globe fa-lg"></i> : Visit My Workplace
+      <i className="fas fa-globe fa-lg"></i> : hi
+    </a>
+  ) : "N/A"}
+</p>
+ */}
+ <p>
+  {profile.company_url ? (
+    <a 
+      href={profile.company_url} 
+      target="_blank" 
+      rel="noopener noreferrer" 
+      style={{ textDecoration: 'none', color: '#4CAF50', fontWeight: 'bold' }}
+    >
+      <i className="fas fa-globe fa-lg"></i> : {profile.company_name || "Company"}
     </a>
   ) : "N/A"}
 </p>

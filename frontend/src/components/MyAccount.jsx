@@ -10,6 +10,8 @@ const MyAccount = () => {
 
     const [acc, setAcc] = useState({
         name: '',
+        
+    company_name: "",
         connected_to: "",
         current_location: "",
         course_id: "",
@@ -32,7 +34,7 @@ const MyAccount = () => {
                 const coursesRes = await axios.get(`${baseUrl}auth/courses`);
 
                 setAcc(alumnusDetailsRes.data.length > 0 ? alumnusDetailsRes.data[0] : {
-                    name: '', connected_to: '', current_location: '', course_id: '', email: '', gender: '', password: '', batch: '', phone: '', linkedin_url: '', company_url: ''
+                    name: '',company_name: '', connected_to: '', current_location: '', course_id: '', email: '', gender: '', password: '', batch: '', phone: '', linkedin_url: '', company_url: ''
                 });
                 setCourses(coursesRes.data);
             } catch (error) {
@@ -63,6 +65,8 @@ const MyAccount = () => {
                 formData.append('image', file);
             }
             formData.append('name', acc.name);
+            formData.append('company_name', acc.company_name || "");
+
             formData.append('connected_to', acc.connected_to);
             formData.append('current_location', acc.current_location);
             formData.append('course_id', acc.course_id);
@@ -156,6 +160,21 @@ const MyAccount = () => {
     </select>
   </div>
 </div>
+{/* Company Name (optional) */}
+<div className="form-group row">
+    <label className="col-sm-2 col-form-label">Company Name</label>
+    <div className="col-sm-10">
+        <input 
+            onChange={handleChange} 
+            type="text" 
+            className="form-control" 
+            name="company_name" 
+            placeholder="Enter your workplace name" 
+            value={acc.company_name || ""} 
+        />
+    </div>
+</div>
+
 
                                 {/* Connected To + Location */}
                                 <div className="form-group row">

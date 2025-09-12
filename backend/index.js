@@ -60,7 +60,7 @@ app.get("/profile/:userId", (req, res) => {
 //   `;
 const sql = `
     SELECT u.id as user_id, u.name as username, u.email as user_email, 
-           a.id as alumni_id, a.name as alumni_name, a.course_id, a.connected_to, a.phone,a.linkedin_url, u.status,a.company_url,a.current_location,  
+           a.id as alumni_id, a.name as alumni_name, a.course_id, a.connected_to,a.company_name, a.phone,a.linkedin_url, u.status,a.company_url,a.current_location,  
            a.gender, a.batch, a.avatar, c.course
     FROM users u
     LEFT JOIN alumni_accounts a ON u.id = a.user_id
