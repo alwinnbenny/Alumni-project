@@ -1106,8 +1106,18 @@ router.get("/up_events", (req, res) => {
 });
 
 router.get("/alumni_list", (req, res) => {
-    const sql = 'SELECT a.*, u.status, a.course_id, c.course FROM alumni_accounts a JOIN users u ON u.id = a.user_id LEFT JOIN courses c ON c.id = a.course_id ORDER BY a.name ASC';
-
+    // const sql = 'SELECT a.*, u.status, a.course_id, c.course FROM alumni_accounts a JOIN users u ON u.id = a.user_id LEFT JOIN courses c ON c.id = a.course_id ORDER BY a.name ASC';
+ const sql = `
+        SELECT 
+            a.*, 
+            u.status, 
+            a.course_id, 
+            c.course 
+        FROM alumni_accounts a 
+        JOIN users u ON u.id = a.user_id 
+        LEFT JOIN courses c ON c.id = a.course_id 
+        ORDER BY a.updated_at DESC
+    `;
     con.query(sql, (err, result) => {
         if (err) return res.json({ Error: "Query Error" })
         if (result.length > 0) {
